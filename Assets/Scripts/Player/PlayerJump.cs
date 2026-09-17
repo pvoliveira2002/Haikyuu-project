@@ -4,11 +4,20 @@ using UnityEngine;
 public sealed class PlayerJump : MonoBehaviour
 {
     [SerializeField, Min(0f)] private float _jumpHeight = 1.2f;
-    [SerializeField] private float _gravity = -20f;
-    [SerializeField] private float _groundedVelocity = -2f;
+    [SerializeField, Min(0f)] private float _gravityMultiplier = 1.7f;
+    [SerializeField, Min(1f)] private float _fallMultiplier = 1.3f;
+    [SerializeField, Min(0f)] private float _coyoteTime = 0.08f;
+    [SerializeField, Min(0f)] private float _jumpBufferTime = 0.1f;
 
     private CharacterController _characterController;
     private float _verticalVelocity;
+    private float _lastGroundedTime = float.NegativeInfinity;
+    private float _lastJumpPressedTime = float.NegativeInfinity;
+
+    private const float GroundedVelocity = -2f;
+
+    public bool IsGrounded =>
+        _characterController != null && _characterController.isGrounded;
 
     private void Awake()
     {
@@ -19,17 +28,38 @@ public sealed class PlayerJump : MonoBehaviour
     {
         bool isGrounded = _characterController.isGrounded;
 
-        if (isGrounded && _verticalVelocity < 0f)
+        if (isGrounded)
         {
-            _verticalVelocity = _groundedVelocity;
+            _lastGroundedTime = Time.time;
+
+            if (_verticalVelocity < 0f)
+            {
+                _verticalVelocity = GroundedVelocity;
+            }
         }
 
-        if (isGrounded && Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * _gravity);
+            _lastJumpPressedTime = Time.time;
         }
 
-        _verticalVelocity += _gravity * Time.deltaTime;
+        bool hasBufferedJump =
+            Time.time - _lastJumpPressedTime <= _jumpBufferTime;
+        bool canUseCoyoteTime =
+            Time.time - _lastGroundedTime <= _coyoteTime;
+
+        if (hasBufferedJump && canUseCoyoteTime)
+        {
+            float upwardGravity = Physics.gravity.y * _gravityMultiplier;
+            _verticalVelocity = Mathf.Sqrt(_jumpHeight * -2f * upwardGravity);
+            _lastJumpPressedTime = float.NegativeInfinity;
+            _lastGroundedTime = float.NegativeInfinity;
+        }
+
+        float gravityScale = _verticalVelocity < 0f
+            ? _gravityMultiplier * _fallMultiplier
+            : _gravityMultiplier;
+        _verticalVelocity += Physics.gravity.y * gravityScale * Time.deltaTime;
         _characterController.Move(Vector3.up * _verticalVelocity * Time.deltaTime);
     }
 }

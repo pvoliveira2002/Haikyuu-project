@@ -5,9 +5,13 @@ public sealed class PlayerMovement : MonoBehaviour
 {
     [SerializeField, Min(0f)] private float _moveSpeed = 5f;
     [SerializeField, Min(0f)] private float _runSpeed = 8f;
-    [SerializeField, Min(0f)] private float _rotationSpeed = 720f;
+    [SerializeField, Min(0f)] private float _acceleration = 20f;
+    [SerializeField, Min(0f)] private float _deceleration = 25f;
+    [SerializeField, Min(0f)] private float _rotationSpeed = 12f;
+    [SerializeField, Range(0f, 1f)] private float _airControl = 0.75f;
 
     private CharacterController _characterController;
+    private Vector3 _horizontalVelocity;
 
     private void Awake()
     {
@@ -18,20 +22,40 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         float verticalInput = Input.GetAxisRaw("Vertical");
-        Vector3 moveDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
+        Vector3 inputDirection = Vector3.ClampMagnitude(
+            new Vector3(horizontalInput, 0f, verticalInput),
+            1f);
+        float targetSpeed = Input.GetKey(KeyCode.LeftShift)
+            ? _runSpeed
+            : _moveSpeed;
+        Vector3 targetVelocity = inputDirection * targetSpeed;
+        float controlMultiplier = _characterController.isGrounded
+            ? 1f
+            : _airControl;
+        float changeRate = inputDirection.sqrMagnitude > 0f
+            ? _acceleration
+            : _deceleration;
 
-        if (moveDirection.sqrMagnitude <= 0f)
+        if (Vector3.Dot(_horizontalVelocity, targetVelocity) < 0f)
         {
-            return;
+            changeRate = _acceleration + _deceleration;
         }
 
-        float currentSpeed = Input.GetKey(KeyCode.LeftShift) ? _runSpeed : _moveSpeed;
-        _characterController.Move(moveDirection * currentSpeed * Time.deltaTime);
+        _horizontalVelocity = Vector3.MoveTowards(
+            _horizontalVelocity,
+            targetVelocity,
+            changeRate * controlMultiplier * Time.deltaTime);
 
-        Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
-            targetRotation,
-            _rotationSpeed * Time.deltaTime);
+        _characterController.Move(_horizontalVelocity * Time.deltaTime);
+
+        if (inputDirection.sqrMagnitude > 0f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(inputDirection);
+            float rotationBlend = 1f - Mathf.Exp(-_rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationBlend);
+        }
     }
 }
