@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Volleyball 3D — Prévia da Quadra</title>
+  <style>
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#111827;color:#f8fafc;font:14px system-ui,sans-serif}canvas{display:block;width:100%;height:100%;cursor:grab}canvas:active{cursor:grabbing}.panel{position:fixed;left:16px;top:16px;padding:12px 14px;border:1px solid #ffffff24;border-radius:10px;background:#0f172acc;backdrop-filter:blur(6px);pointer-events:none}.panel h1{font-size:16px;margin:0 0 5px}.panel p{margin:2px 0;color:#cbd5e1}.badge{display:inline-block;margin-top:7px;padding:3px 7px;border-radius:999px;background:#22c55e22;color:#86efac}
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div class="panel"><h1>Volleyball 3D — FASE 4</h1><p><b>WASD</b> mover · <b>Shift</b> correr · <b>Space</b> saltar</p><p><b>E</b> tocar na bola quando ela estiver na zona de contato</p><p>Arraste para girar · roda do mouse para aproximar</p><span class="badge" id="status">Aproxime-se da bola</span></div>
+  <script>
+    const canvas=document.querySelector('#view'),ctx=canvas.getContext('2d');
+    let yaw=-.48,pitch=.68,distance=30,drag=false,lastX=0,lastY=0,lastTime=performance.now();
+    const keys=new Set(),player={x:0,y:0,z:-6,verticalVelocity:0,facing:0,grounded:true};
+    const ball={x:.8,y:.5,z:-2.5,vx:0,vy:0,vz:0,radius:.21,mass:.27,maxSpeed:25};
+    const moveSpeed=5,runSpeed=8,jumpHeight=1.2,gravity=-20;
+    const contactRadius=1.25,contactForward=1.15,impulseForce=3,impulseUp=.75;
+    const status=document.querySelector('#status');
+    const objects=[];
+    const box=(name,x,y,z,sx,sy,sz,color,alpha=1)=>objects.push({name,x,y,z,sx,sy,sz,color,alpha});
+    box('Side A',0,-.12,-4.5,9,.24,9,'#1d5fbf');
+    box('Side B',0,-.12,4.5,9,.24,9,'#d45517');
+    const white='#f8fafc';
+    box('Left Sideline',-4.5,.02,0,.09,.04,18,white);
+    box('Right Sideline',4.5,.02,0,.09,.04,18,white);
+    box('Side A End Line',0,.02,-9,9.08,.04,.09,white);
+    box('Side B End Line',0,.02,9,9.08,.04,.09,white);
+    box('Center Line',0,.03,0,9.08,.05,.1,white);
+    box('Net',0,1.55,0,9.4,1.1,.07,'#dbeafe',.62);
+    box('Left Net Post',-4.8,1.55,0,.14,3.1,.14,'#202631');
+    box('Right Net Post',4.8,1.55,0,.14,3.1,.14,'#202631');
+
+    const verts=o=>{const a=[];for(const X of[-.5,.5])for(const Y of[-.5,.5])for(const Z of[-.5,.5])a.push([o.x+X*o.sx,o.y+Y*o.sy,o.z+Z*o.sz]);return a};
+    const faces=[[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]];
+    function camera(p){let[x,y,z]=p,cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);let x1=cy*x-sy*z,z1=sy*x+cy*z,y1=cp*y-sp*z1,z2=sp*y+cp*z1+distance;return[x1,y1,z2]}
+    function project(p){const q=camera(p),f=Math.min(canvas.width,canvas.height)*.9/q[2];return[canvas.width/2+q[0]*f,canvas.height*.58-q[1]*f,q[2]]}
+    function shade(hex,k){const n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*k),g=Math.min(255,((n>>8)&255)*k),b=Math.min(255,(n&255)*k);return`rgb(${r|0} ${g|0} ${b|0})`}
+    function resize(){const d=Math.min(devicePixelRatio||1,2),w=innerWidth,h=innerHeight;if(canvas.width!==w*d||canvas.height!==h*d){canvas.width=w*d;canvas.height=h*d}}
+    function update(now){const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;let x=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),z=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0),length=Math.hypot(x,z);if(length){x/=length;z/=length;const speed=(keys.has('ShiftLeft')||keys.has('ShiftRight'))?runSpeed:moveSpeed;player.x+=x*speed*dt;player.z+=z*speed*dt;player.facing=Math.atan2(x,z)}player.verticalVelocity+=gravity*dt;player.y+=player.verticalVelocity*dt;if(player.y<=0){player.y=0;player.verticalVelocity=0;player.grounded=true}updateBall(dt);status.textContent=ballInContact()?'Bola na zona — pressione E':'Aproxime-se da bola'}
+    function updateBall(dt){ball.vy+=-9.81*dt;let oldZ=ball.z;ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.z+=ball.vz*dt;const speed=Math.hypot(ball.vx,ball.vy,ball.vz);if(speed>ball.maxSpeed){const k=ball.maxSpeed/speed;ball.vx*=k;ball.vy*=k;ball.vz*=k}const onCourt=Math.abs(ball.x)<=4.6&&Math.abs(ball.z)<=9.1;if(onCourt&&ball.y<ball.radius){ball.y=ball.radius;if(ball.vy<0)ball.vy=-ball.vy*.12;ball.vx*=.985;ball.vz*=.985}const crossedNet=(oldZ<0&&ball.z>=0)||(oldZ>0&&ball.z<=0);if(crossedNet&&Math.abs(ball.x)<4.75&&ball.y<2.1){ball.z=oldZ;ball.vz=-ball.vz*.45}}
+    function contactCenter(){return{x:player.x+Math.sin(player.facing)*contactForward,y:player.y+1,z:player.z+Math.cos(player.facing)*contactForward}}
+    function ballInContact(){const c=contactCenter();return Math.hypot(ball.x-c.x,ball.y-c.y,ball.z-c.z)<=contactRadius+ball.radius}
+    function touchBall(){if(!ballInContact())return;const fx=Math.sin(player.facing),fz=Math.cos(player.facing),length=Math.hypot(fx,impulseUp,fz),delta=impulseForce/ball.mass;ball.vx+=fx/length*delta;ball.vy+=impulseUp/length*delta;ball.vz+=fz/length*delta}
+    function draw(now){update(now);resize();const g=ctx.createLinearGradient(0,0,0,canvas.height);g.addColorStop(0,'#172033');g.addColorStop(1,'#090d16');ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
+      const polys=[];for(const o of objects){const v=verts(o),pv=v.map(project);faces.forEach((f,i)=>{const pts=f.map(j=>pv[j]),depth=pts.reduce((s,p)=>s+p[2],0)/4;polys.push({pts,depth,color:shade(o.color,[.72,.92,.8,1,.86,.64][i]),alpha:o.alpha})})}polys.sort((a,b)=>b.depth-a.depth);for(const p of polys){ctx.globalAlpha=p.alpha;ctx.beginPath();ctx.moveTo(p.pts[0][0],p.pts[0][1]);p.pts.slice(1).forEach(q=>ctx.lineTo(q[0],q[1]));ctx.closePath();ctx.fillStyle=p.color;ctx.fill();ctx.strokeStyle='#00000020';ctx.stroke()}
+      ctx.globalAlpha=1;drawContactZone();drawBall();drawPlayer();requestAnimationFrame(draw)}
+    function drawContactZone(){const c=contactCenter(),p=project([c.x,.03,c.z]),edge=project([c.x+contactRadius,.03,c.z]),r=Math.max(4,Math.abs(edge[0]-p[0]));ctx.beginPath();ctx.arc(p[0],p[1],r,0,Math.PI*2);ctx.fillStyle=ballInContact()?'#22c55e35':'#38bdf825';ctx.fill();ctx.strokeStyle=ballInContact()?'#86efac':'#7dd3fc';ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([])}
+    function drawBall(){const p=project([ball.x,ball.y,ball.z]),r=Math.max(3,Math.abs(project([ball.x+ball.radius,ball.y,ball.z])[0]-p[0]));const g=ctx.createRadialGradient(p[0]-r*.35,p[1]-r*.35,1,p[0],p[1],r);g.addColorStop(0,'#fff7ae');g.addColorStop(1,'#e8a900');ctx.fillStyle=g;ctx.beginPath();ctx.arc(p[0],p[1],Math.abs(r),0,Math.PI*2);ctx.fill();ctx.strokeStyle='#7c5200';ctx.stroke()}
+    function drawPlayer(){const foot=project([player.x,player.y,player.z]),head=project([player.x,player.y+2,player.z]),middle=project([player.x,player.y+1,player.z]),r=Math.max(7,Math.abs(project([player.x+.5,player.y+1,player.z])[0]-middle[0]));ctx.lineWidth=r*2;ctx.lineCap='round';ctx.strokeStyle='#b91c1c';ctx.beginPath();ctx.moveTo(foot[0],foot[1]-r);ctx.lineTo(head[0],head[1]+r);ctx.stroke();const fx=Math.sin(player.facing),fz=Math.cos(player.facing),front=project([player.x+fx*.9,player.y+1.15,player.z+fz*.9]);ctx.lineWidth=Math.max(3,r*.25);ctx.strokeStyle='#fee2e2';ctx.beginPath();ctx.moveTo(middle[0],middle[1]);ctx.lineTo(front[0],front[1]);ctx.stroke();ctx.lineWidth=1;ctx.lineCap='butt'}
+    canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;yaw+=(e.clientX-lastX)*.008;pitch=Math.max(.12,Math.min(1.15,pitch+(e.clientY-lastY)*.006));lastX=e.clientX;lastY=e.clientY});canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('wheel',e=>{e.preventDefault();distance=Math.max(15,Math.min(45,distance+e.deltaY*.018))},{passive:false});
+    addEventListener('keydown',e=>{if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Space','KeyE'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Space'&&player.grounded){player.verticalVelocity=Math.sqrt(jumpHeight*-2*gravity);player.grounded=false}if(e.code==='KeyE'&&!e.repeat)touchBall()});addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
