@@ -12,6 +12,7 @@ public sealed class SpikeSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _maximumContactHeight = 3f;
     [SerializeField, Min(0f)] private float _spikeWindow = 0.25f;
     [SerializeField, Min(0f)] private float _inputBuffer = 0.15f;
+    [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = 0.15f;
 
     private float _bufferEndTime = float.NegativeInfinity;
     private float _spikeWindowEndTime = float.NegativeInfinity;
@@ -57,7 +58,7 @@ public sealed class SpikeSystem : MonoBehaviour
                 ball,
                 _minimumContactHeight,
                 _maximumContactHeight,
-                -0.1f) ||
+                _minimumForwardDot) ||
             !_contactZone.TryConsumeContact(ball))
         {
             return;

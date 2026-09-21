@@ -4,33 +4,38 @@ using UnityEngine;
 public sealed class VolleyballCameraController : MonoBehaviour
 {
     [SerializeField] private Transform _player;
+    [SerializeField] private Transform _playerPivot;
     [SerializeField] private Transform _ball;
-    [SerializeField] private Transform _aiOpponent;
-    [SerializeField] private Transform _courtCenter;
-    [SerializeField, Min(0f)] private float _cameraHeight = 9.5f;
-    [SerializeField, Min(0f)] private float _cameraDistance = 11f;
-    [SerializeField, Range(0f, 1f)] private float _ballWeight = 0.35f;
-    [SerializeField, Range(0f, 1f)] private float _lateralFollow = 0.4f;
-    [SerializeField, Range(0f, 1f)] private float _verticalBallInfluence = 0.2f;
-    [SerializeField, Min(0f)] private float _positionSmoothTime = 0.2f;
-    [SerializeField, Min(0f)] private float _rotationSmoothTime = 0.15f;
-    [SerializeField, Range(1f, 179f)] private float _minimumFov = 48f;
-    [SerializeField, Range(1f, 179f)] private float _maximumFov = 54f;
-    [SerializeField, Min(0f)] private float _fovSmoothSpeed = 6f;
+    [SerializeField, Min(0f)] private float _distance = 4.8f;
+    [SerializeField, Min(0f)] private float _height = 2.5f;
+    [SerializeField, Min(0f)] private float _playerPivotHeight = 1.4f;
+    [SerializeField, Min(0f)] private float _mouseSensitivity = 2f;
+    [SerializeField, Range(-89f, 89f)] private float _minimumPitch = -10f;
+    [SerializeField, Range(-89f, 89f)] private float _maximumPitch = 45f;
+    [SerializeField, Range(0f, 1f)] private float _ballLookWeight = 0.3f;
+    [SerializeField, Min(0f)] private float _maximumBallAssistDistance = 4f;
+    [SerializeField, Min(0f)] private float _positionSmoothTime = 0.1f;
+    [SerializeField, Min(0f)] private float _rotationSmoothTime = 0.08f;
+    [SerializeField, Range(55f, 75f)] private float _fieldOfView = 64f;
+    [SerializeField] private LayerMask _collisionMask = ~0;
+    [SerializeField, Min(0f)] private float _collisionRadius = 0.25f;
+    [SerializeField, Min(0f)] private float _collisionPadding = 0.1f;
     [SerializeField, Min(0.01f)] private float _impulseDuration = 0.1f;
 
-    private const float OpponentWeight = 0.1f;
-    private static readonly Vector2 LateralLimits = new Vector2(-4f, 4f);
-    private static readonly Vector2 DepthLimits = new Vector2(-15f, -9.5f);
-    private static readonly Vector2 HeightLimits = new Vector2(8f, 12f);
-    private static readonly Vector2 FocusDepthLimits = new Vector2(-5f, 5f);
-
+    private readonly RaycastHit[] _collisionHits = new RaycastHit[12];
     private Camera _camera;
     private Vector3 _positionVelocity;
     private Vector3 _focusPoint;
     private Vector3 _appliedImpulseOffset;
+    private float _yaw;
+    private float _pitch = 12f;
     private float _impulseStrength;
     private float _impulseEndTime;
+
+    public float Yaw => _yaw;
+    public float Pitch => _pitch;
+    public float Distance => _distance;
+    public float BallAssistWeight => _ballLookWeight;
 
     private void Awake()
     {
@@ -44,10 +49,41 @@ public sealed class VolleyballCameraController : MonoBehaviour
             return;
         }
 
+        _yaw = _player.eulerAngles.y;
+        _camera.fieldOfView = _fieldOfView;
         _focusPoint = CalculateFocusPoint();
-        transform.position = CalculateDesiredPosition();
-        transform.rotation = Quaternion.LookRotation(_focusPoint - transform.position);
-        _camera.fieldOfView = CalculateTargetFov();
+        transform.position = ResolveCollision(CalculateDesiredPosition());
+        transform.rotation = Quaternion.LookRotation(
+            _focusPoint - transform.position,
+            Vector3.up);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else if (Input.GetMouseButtonDown(0) &&
+                 Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            return;
+        }
+
+        _yaw += Input.GetAxis("Mouse X") * _mouseSensitivity;
+        _pitch = Mathf.Clamp(
+            _pitch - Input.GetAxis("Mouse Y") * _mouseSensitivity,
+            Mathf.Min(_minimumPitch, _maximumPitch),
+            Mathf.Max(_minimumPitch, _maximumPitch));
     }
 
     private void LateUpdate()
@@ -60,11 +96,13 @@ public sealed class VolleyballCameraController : MonoBehaviour
         transform.position -= _appliedImpulseOffset;
         _appliedImpulseOffset = Vector3.zero;
 
-        Vector3 desiredFocus = CalculateFocusPoint();
-        float focusBlend = SmoothBlend(_rotationSmoothTime);
-        _focusPoint = Vector3.Lerp(_focusPoint, desiredFocus, focusBlend);
+        float rotationBlend = SmoothBlend(_rotationSmoothTime);
+        _focusPoint = Vector3.Lerp(
+            _focusPoint,
+            CalculateFocusPoint(),
+            rotationBlend);
 
-        Vector3 desiredPosition = CalculateDesiredPosition();
+        Vector3 desiredPosition = ResolveCollision(CalculateDesiredPosition());
         transform.position = Vector3.SmoothDamp(
             transform.position,
             desiredPosition,
@@ -77,14 +115,8 @@ public sealed class VolleyballCameraController : MonoBehaviour
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
             desiredRotation,
-            focusBlend);
-
-        float targetFov = CalculateTargetFov();
-        float fovBlend = 1f - Mathf.Exp(-_fovSmoothSpeed * Time.deltaTime);
-        _camera.fieldOfView = Mathf.Lerp(
-            _camera.fieldOfView,
-            targetFov,
-            fovBlend);
+            rotationBlend);
+        _camera.fieldOfView = _fieldOfView;
 
         ApplyCurrentImpulse();
     }
@@ -98,6 +130,66 @@ public sealed class VolleyballCameraController : MonoBehaviour
 
         _impulseStrength = Mathf.Max(_impulseStrength, strength);
         _impulseEndTime = Time.time + _impulseDuration;
+    }
+
+    private Vector3 PivotPosition => _playerPivot != null
+        ? _playerPivot.position
+        : _player.position + Vector3.up * _playerPivotHeight;
+
+    private Vector3 CalculateDesiredPosition()
+    {
+        Quaternion yawRotation = Quaternion.Euler(0f, _yaw, 0f);
+        Vector3 forward = yawRotation * Vector3.forward;
+        return PivotPosition + Vector3.up * _height - forward * _distance;
+    }
+
+    private Vector3 CalculateFocusPoint()
+    {
+        Vector3 pivot = PivotPosition;
+        Vector3 manualDirection = Quaternion.Euler(_pitch, _yaw, 0f) *
+            Vector3.forward;
+        Vector3 manualFocus = pivot + manualDirection * 10f;
+        Vector3 ballOffset = Vector3.ClampMagnitude(
+            _ball.position - pivot,
+            _maximumBallAssistDistance);
+        Vector3 assistedFocus = manualFocus + ballOffset;
+        return Vector3.Lerp(manualFocus, assistedFocus, _ballLookWeight);
+    }
+
+    private Vector3 ResolveCollision(Vector3 desiredPosition)
+    {
+        Vector3 pivot = PivotPosition;
+        Vector3 offset = desiredPosition - pivot;
+        float distance = offset.magnitude;
+        if (distance <= 0.001f)
+        {
+            return desiredPosition;
+        }
+
+        int hitCount = Physics.SphereCastNonAlloc(
+            pivot,
+            _collisionRadius,
+            offset.normalized,
+            _collisionHits,
+            distance,
+            _collisionMask,
+            QueryTriggerInteraction.Ignore);
+        float closestDistance = distance;
+        for (int index = 0; index < hitCount; index++)
+        {
+            RaycastHit hit = _collisionHits[index];
+            if (hit.collider == null ||
+                hit.collider.transform.root == _player.root)
+            {
+                continue;
+            }
+
+            closestDistance = Mathf.Min(closestDistance, hit.distance);
+        }
+
+        return pivot + offset.normalized * Mathf.Max(
+            0f,
+            closestDistance - _collisionPadding);
     }
 
     private void ApplyCurrentImpulse()
@@ -115,58 +207,6 @@ public sealed class VolleyballCameraController : MonoBehaviour
         transform.position += _appliedImpulseOffset;
     }
 
-    private Vector3 CalculateFocusPoint()
-    {
-        Vector3 focus = Vector3.Lerp(_player.position, _ball.position, _ballWeight);
-        if (_aiOpponent != null)
-        {
-            focus = Vector3.Lerp(focus, _aiOpponent.position, OpponentWeight);
-        }
-
-        float highBallOffset = Mathf.Clamp(
-            (_ball.position.y - 2f) * _verticalBallInfluence,
-            0f,
-            2f);
-        focus.x = Mathf.Clamp(focus.x, LateralLimits.x, LateralLimits.y);
-        focus.y = _courtCenter.position.y + 1.5f + highBallOffset;
-        focus.z = Mathf.Clamp(
-            focus.z,
-            _courtCenter.position.z + FocusDepthLimits.x,
-            _courtCenter.position.z + FocusDepthLimits.y);
-        return focus;
-    }
-
-    private Vector3 CalculateDesiredPosition()
-    {
-        float lateralOffset = (_focusPoint.x - _courtCenter.position.x) * _lateralFollow;
-        float longitudinalOffset = (_player.position.z - _courtCenter.position.z) * 0.2f;
-        float highBallOffset = Mathf.Clamp(
-            (_ball.position.y - 2f) * _verticalBallInfluence,
-            0f,
-            2f);
-
-        return new Vector3(
-            _courtCenter.position.x + Mathf.Clamp(
-                lateralOffset,
-                LateralLimits.x,
-                LateralLimits.y),
-            Mathf.Clamp(
-                _courtCenter.position.y + _cameraHeight + highBallOffset,
-                HeightLimits.x,
-                HeightLimits.y),
-            _courtCenter.position.z + Mathf.Clamp(
-                -_cameraDistance + longitudinalOffset,
-                DepthLimits.x,
-                DepthLimits.y));
-    }
-
-    private float CalculateTargetFov()
-    {
-        float playerBallDistance = Vector3.Distance(_player.position, _ball.position);
-        float distanceFactor = Mathf.InverseLerp(2f, 15f, playerBallDistance);
-        return Mathf.Lerp(_minimumFov, _maximumFov, distanceFactor);
-    }
-
     private float SmoothBlend(float smoothTime)
     {
         return smoothTime <= 0f
@@ -176,25 +216,20 @@ public sealed class VolleyballCameraController : MonoBehaviour
 
     private bool HasRequiredReferences()
     {
-        return _player != null &&
-               _ball != null &&
-               _courtCenter != null &&
-               _camera != null;
+        return _player != null && _ball != null && _camera != null;
     }
 
     private void OnDrawGizmosSelected()
     {
-        if (_player == null || _ball == null || _courtCenter == null)
+        if (_player == null || _ball == null)
         {
             return;
         }
 
-        Vector3 focus = Application.isPlaying ? _focusPoint : CalculateFocusPoint();
+        Vector3 pivot = PivotPosition;
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(focus, 0.3f);
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(CalculateDesiredPosition(), 0.35f);
+        Gizmos.DrawWireSphere(pivot, 0.2f);
         Gizmos.color = Color.white;
-        Gizmos.DrawLine(CalculateDesiredPosition(), focus);
+        Gizmos.DrawLine(pivot, CalculateDesiredPosition());
     }
 }

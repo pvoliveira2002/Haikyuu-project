@@ -15,6 +15,7 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private AIOpponentDecision _aiDecision;
     [SerializeField] private AIOpponentController _aiController;
     [SerializeField] private BallTrajectoryPredictor _trajectoryPredictor;
+    [SerializeField] private VolleyballCameraController _cameraController;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -58,9 +59,12 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Landing {timeToLanding}  Reach {_aiController.CanReachCurrentTarget}  " +
             $"Reaction {_aiReactionTime:F2}s\n" +
             $"Rally | Touches {_playtestMonitor.RallyTouches}  " +
-            $"Longest {_playtestMonitor.LongestRally}  End {_playtestMonitor.LastRallyEndReason}";
+            $"Longest {_playtestMonitor.LongestRally}  End {_playtestMonitor.LastRallyEndReason}\n" +
+            $"CAMERA | Yaw {_cameraController.Yaw:F1}  Pitch {_cameraController.Pitch:F1}  " +
+            $"Distance {_cameraController.Distance:F1}  BallAssist {_cameraController.BallAssistWeight:F2}  " +
+            $"PlayerCameraRelativeMovement true";
 
-        GUI.Box(new Rect(12f, 12f, 610f, 145f), text);
+        GUI.Box(new Rect(12f, 12f, 700f, 170f), text);
     }
 
     private bool HasRequiredReferences()
@@ -76,6 +80,7 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _touchTracker != null &&
                _aiDecision != null &&
                _aiController != null &&
-               _trajectoryPredictor != null;
+               _trajectoryPredictor != null &&
+               _cameraController != null;
     }
 }

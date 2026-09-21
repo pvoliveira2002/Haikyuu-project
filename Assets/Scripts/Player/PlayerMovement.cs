@@ -3,6 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public sealed class PlayerMovement : MonoBehaviour
 {
+    [SerializeField] private Transform _movementReference;
     [SerializeField, Min(0f)] private float _moveSpeed = 5f;
     [SerializeField, Min(0f)] private float _runSpeed = 8f;
     [SerializeField, Min(0f)] private float _acceleration = 20f;
@@ -22,8 +23,18 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         float horizontalInput = Input.GetAxisRaw("Horizontal");
         float verticalInput = Input.GetAxisRaw("Vertical");
+        Vector3 forward = _movementReference != null
+            ? _movementReference.forward
+            : Vector3.forward;
+        Vector3 right = _movementReference != null
+            ? _movementReference.right
+            : Vector3.right;
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
         Vector3 inputDirection = Vector3.ClampMagnitude(
-            new Vector3(horizontalInput, 0f, verticalInput),
+            forward * verticalInput + right * horizontalInput,
             1f);
         float targetSpeed = Input.GetKey(KeyCode.LeftShift)
             ? _runSpeed

@@ -402,6 +402,7 @@ MonoBehaviour:
   _aiDecision: {fileID: 2106}
   _aiController: {fileID: 2105}
   _trajectoryPredictor: {fileID: 2104}
+  _cameraController: {fileID: 614}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -1115,8 +1116,9 @@ GameObject:
   - component: {fileID: 534}
   - component: {fileID: 535}
   - component: {fileID: 536}
+  - component: {fileID: 537}
   m_Layer: 0
-  m_Name: Player Capsule
+  m_Name: Player 1 - Kageyama
   m_TagString: Untagged
   m_IsActive: 1
 --- !u!4 &521
@@ -1132,7 +1134,40 @@ Transform:
   - {fileID: 901}
   - {fileID: 911}
   - {fileID: 951}
+  - {fileID: 2161}
+  - {fileID: 2171}
   m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2170
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2171}
+  m_Layer: 0
+  m_Name: CameraPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2171
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2170}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 521}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &522
 MeshFilter:
@@ -1143,12 +1178,99 @@ MeshFilter:
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_GameObject: {fileID: 520}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_Materials:
   - {fileID: 1006}
   m_SortingLayerID: 0
+  m_SortingOrder: 0
+--- !u!1 &2160
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2161}
+  - component: {fileID: 2162}
+  - component: {fileID: 2163}
+  m_Layer: 0
+  m_Name: KageyamaVisual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2161
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2160}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 0}
+  m_LocalScale: {x: 0.079, y: 0.079, z: 0.079}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 521}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2162
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2160}
+  m_Mesh: {fileID: 4300000, guid: 843a431393d34030ace0a3d0961b2074, type: 3}
+--- !u!23 &2163
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2160}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 825a70d312f24e69a21946bab61b8f28, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
   m_SortingOrder: 0
 --- !u!143 &525
 CharacterController:
@@ -1181,6 +1303,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16e1e4ed7c344e3a8acd73c907c53d89, type: 3}
   m_Name:
   m_EditorClassIdentifier:
+  _movementReference: {fileID: 611}
   _moveSpeed: 5
   _runSpeed: 8
   _acceleration: 20
@@ -1220,6 +1343,7 @@ MonoBehaviour:
   _horizontalMultiplier: 0.65
   _minimumContactHeight: 0.3
   _maximumContactHeight: 1.7
+  _minimumForwardDot: -0.25
 --- !u!114 &529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1239,6 +1363,7 @@ MonoBehaviour:
   _forwardComponent: 0.18
   _minimumContactHeight: 0.8
   _maximumContactHeight: 2.3
+  _minimumForwardDot: -0.15
 --- !u!114 &534
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1261,6 +1386,7 @@ MonoBehaviour:
   _maximumContactHeight: 3
   _spikeWindow: 0.25
   _inputBuffer: 0.15
+  _minimumForwardDot: 0.15
 --- !u!114 &535
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1297,6 +1423,25 @@ MonoBehaviour:
   _serveForce: 3.3
   _verticalBias: 0.7
   _maximumServeDistance: 3.5
+--- !u!114 &537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee08ceef84d04ed09d2138c1c22b995e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _modelPrefab: {fileID: 100100000, guid: 4ef17b6b2be9490d929c27246ce5fa52, type: 3}
+  _defaultAnimation: {fileID: 7400000, guid: 4ef17b6b2be9490d929c27246ce5fa52, type: 3}
+  _animatorController: {fileID: 9100000, guid: ed511b693eda4e83bd5a46960770481a, type: 2}
+  _staticFallback: {fileID: 2160}
+  _localPosition: {x: 0, y: -1, z: 0}
+  _localEulerAngles: {x: 0, y: 0, z: 0}
+  _localScale: {x: 1, y: 1, z: 1}
 --- !u!1 &950
 GameObject:
   m_ObjectHideFlags: 0
@@ -1369,6 +1514,7 @@ MonoBehaviour:
   _blockForce: 1.2
   _downwardBias: 0.2
   _blockWindow: 0.3
+  _minimumForwardDot: 0.3
 --- !u!1 &530
 GameObject:
   m_ObjectHideFlags: 0
@@ -1396,7 +1542,7 @@ Transform:
   m_GameObject: {fileID: 530}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.75, z: 0.9}
+  m_LocalPosition: {x: 0, y: 0.8, z: 0.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1988,7 +2134,7 @@ MonoBehaviour:
   _attackMinHeight: 1.6
   _attackMaxHeight: 3
   _attackDistance: 1
-  _attackChance: 0.65
+  _attackChance: 0.35
   _reactionTime: 0.18
   _currentAction: 1
 --- !u!1 &2130
@@ -2062,16 +2208,22 @@ MonoBehaviour:
   _ball: {fileID: 516}
   _contactZone: {fileID: 2132}
   _returnTarget: {fileID: 2121}
+  _player: {fileID: 521}
   _netTopReference: {fileID: 2141}
   _touchTracker: {fileID: 517}
-  _receiveForce: 1.6
-  _receiveVerticalBias: 0.9
   _attackForce: 2.1
   _attackVerticalBias: 0.35
   _attackDownwardBias: 0.05
   _netClearance: 0.6
   _contactCooldown: 0.35
   _targetVariation: 0.75
+  _safeReturnX: {x: -3, y: 3}
+  _safeReturnZ: {x: -7, y: -3.5}
+  _minimumReceiveFlightTime: 1.2
+  _maximumReceiveFlightTime: 2
+  _playerMoveSpeed: 5
+  _playerReactionAllowance: 0.2
+  _landingHeight: 0.21
 --- !u!1 &2110
 GameObject:
   m_ObjectHideFlags: 0
@@ -2556,12 +2708,12 @@ Transform:
   m_ObjectHideFlags: 0
   m_GameObject: {fileID: 610}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.3688, y: 0, z: 0, w: 0.9295}
-  m_LocalPosition: {x: 0, y: 9.5, z: -12.2}
+  m_LocalRotation: {x: 0.0436, y: 0, z: 0, w: 0.999}
+  m_LocalPosition: {x: 0, y: 4.9, z: -10.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 601}
-  m_LocalEulerAnglesHint: {x: 43.3, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 5, y: 0, z: 0}
 --- !u!20 &612
 Camera:
   m_ObjectHideFlags: 0
@@ -2576,7 +2728,7 @@ Camera:
   m_NormalizedViewPortRect: {serializedVersion: 2, x: 0, y: 0, width: 1, height: 1}
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 50
+  field of view: 64
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -2608,19 +2760,24 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   _player: {fileID: 521}
+  _playerPivot: {fileID: 2171}
   _ball: {fileID: 511}
-  _aiOpponent: {fileID: 2101}
-  _courtCenter: {fileID: 2151}
-  _cameraHeight: 9.5
-  _cameraDistance: 11
-  _ballWeight: 0.35
-  _lateralFollow: 0.4
-  _verticalBallInfluence: 0.2
-  _positionSmoothTime: 0.2
-  _rotationSmoothTime: 0.15
-  _minimumFov: 48
-  _maximumFov: 54
-  _fovSmoothSpeed: 6
+  _distance: 4.8
+  _height: 2.5
+  _playerPivotHeight: 1.4
+  _mouseSensitivity: 2
+  _minimumPitch: -10
+  _maximumPitch: 45
+  _ballLookWeight: 0.3
+  _maximumBallAssistDistance: 4
+  _positionSmoothTime: 0.1
+  _rotationSmoothTime: 0.08
+  _fieldOfView: 64
+  _collisionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _collisionRadius: 0.25
+  _collisionPadding: 0.1
   _impulseDuration: 0.1
 --- !u!114 &615
 MonoBehaviour:

@@ -65,19 +65,21 @@ Values recorded from `PrototypeCourt.unity` and its attached scripts. No subject
 - Deceleration: 20 m/s²
 - Reaction Time: 0.18 s
 - Positioning Offset: 0.8 m
-- Attack Chance: 0.65
+- Attack Chance: 0.35
 - Target Variation: 0.75 m
 - Contact Cooldown: 0.35 s
-- Receive Force: 1.6
+- Receive Trajectory: ballistic, 1.2-2.0 s to the safe return area
 - Attack Force: 2.1
 
 ## Camera
 
-- Height: 9.5 m
-- Distance: 11 m
-- Position Smooth Time: 0.2 s
-- Rotation Smooth Time: 0.15 s
-- FOV Range: 48–54°
+- Player Pivot Height: 1.4 m
+- Height: 2.5 m
+- Distance: 4.8 m
+- Position Smooth Time: 0.1 s
+- Rotation Smooth Time: 0.08 s
+- FOV: 64°
+- Ball Assist Weight: 0.30
 
 # Playtest Checklist
 
@@ -155,4 +157,10 @@ Suggested categories: movement response, jump, receive height, set height, spike
 
 Format: `Data | sistema | valor anterior → valor novo | motivo`
 
-No balance changes recorded yet.
+2026-09-21 | AI Attack Chance | 0.65 -> 0.35 | Prioriza devolucoes controladas e rallies mais longos.
+
+2026-09-21 | AI Receive | impulso minimo para cruzar a rede -> alvo seguro X [-3, 3], Z [-7, -3.5] com voo balistico de 1.2-2.0 s | Da ao Player tempo e espaco previsiveis para continuar o rally.
+
+2026-09-21 | AI Receive Force / Vertical Bias | 1.6 / 0.9 -> velocidade calculada pelo alvo e tempo de voo | Evita que uma forca fixa produza devolucoes baixas ou inalcançaveis.
+
+2026-09-21 | Camera | top-down: height 9.5, distance 11, FOV 48-54 -> third-person: height 2.5, distance 4.8, FOV 64 | Reforca o controle individual do atleta e a leitura da acao a frente.

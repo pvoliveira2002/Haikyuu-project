@@ -9,6 +9,7 @@ public sealed class ReceiveSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _horizontalMultiplier = 0.65f;
     [SerializeField, Min(0f)] private float _minimumContactHeight = 0.3f;
     [SerializeField, Min(0f)] private float _maximumContactHeight = 1.7f;
+    [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = -0.25f;
 
     private void Awake()
     {
@@ -30,12 +31,27 @@ public sealed class ReceiveSystem : MonoBehaviour
         }
 
         VolleyballBall ball = _contactZone.BallInRange;
-        if (!_contactZone.IsValidContact(
-                ball,
-                _minimumContactHeight,
-                _maximumContactHeight,
-                -0.5f) ||
-            !_contactZone.TryConsumeContact(ball))
+        _contactZone.EvaluateContact(
+            ball,
+            _minimumContactHeight,
+            _maximumContactHeight,
+            _minimumForwardDot,
+            out bool insideZone,
+            out bool heightValid,
+            out bool angleValid);
+        bool cooldownReady = _contactZone.ContactCooldownRemaining <= 0f;
+        bool accepted = insideZone &&
+            heightValid &&
+            angleValid &&
+            cooldownReady &&
+            _contactZone.TryConsumeContact(ball);
+
+        Debug.Log(
+            $"PLAYER CONTACT | InsideZone: {insideZone} | HeightValid: {heightValid} | " +
+            $"AngleValid: {angleValid} | CooldownReady: {cooldownReady} | " +
+            $"ContactAccepted: {accepted}");
+
+        if (!accepted)
         {
             return;
         }

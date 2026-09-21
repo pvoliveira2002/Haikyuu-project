@@ -9,6 +9,7 @@ public sealed class SetSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _forwardComponent = 0.18f;
     [SerializeField, Min(0f)] private float _minimumContactHeight = 0.8f;
     [SerializeField, Min(0f)] private float _maximumContactHeight = 2.3f;
+    [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = -0.15f;
 
     private void Awake()
     {
@@ -33,7 +34,7 @@ public sealed class SetSystem : MonoBehaviour
                 ball,
                 _minimumContactHeight,
                 _maximumContactHeight,
-                -0.5f) ||
+                _minimumForwardDot) ||
             !_contactZone.TryConsumeContact(ball))
         {
             return;

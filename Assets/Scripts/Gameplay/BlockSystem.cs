@@ -9,6 +9,7 @@ public sealed class BlockSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _blockForce = 1.2f;
     [SerializeField, Min(0f)] private float _downwardBias = 0.2f;
     [SerializeField, Min(0f)] private float _blockWindow = 0.3f;
+    [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = 0.3f;
 
     private bool _blockActive;
     private bool _hasBlockedBall;
@@ -57,6 +58,7 @@ public sealed class BlockSystem : MonoBehaviour
             _playerJump == null ||
             _playerJump.IsGrounded ||
             !other.TryGetComponent(out VolleyballBall ball) ||
+            !IsDirectionValid(ball) ||
             (_sharedContactZone != null && !_sharedContactZone.TryConsumeContact(ball)))
         {
             return;
@@ -72,6 +74,22 @@ public sealed class BlockSystem : MonoBehaviour
             ball.transform.position);
         _hasBlockedBall = true;
         _blockActive = false;
+    }
+
+    private bool IsDirectionValid(VolleyballBall ball)
+    {
+        Transform playerRoot = _playerJump.transform;
+        Vector3 horizontalOffset = ball.transform.position - playerRoot.position;
+        horizontalOffset.y = 0f;
+
+        if (horizontalOffset.sqrMagnitude <= 0.0001f)
+        {
+            return true;
+        }
+
+        return Vector3.Dot(
+            playerRoot.forward,
+            horizontalOffset.normalized) >= _minimumForwardDot;
     }
 
     private void OnDrawGizmosSelected()

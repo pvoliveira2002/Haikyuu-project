@@ -24,7 +24,7 @@ public sealed class AIOpponentDecision : MonoBehaviour
     [SerializeField, Min(0f)] private float _attackMinHeight = 1.6f;
     [SerializeField, Min(0f)] private float _attackMaxHeight = 3f;
     [SerializeField, Min(0f)] private float _attackDistance = 1f;
-    [SerializeField, Range(0f, 1f)] private float _attackChance = 0.65f;
+    [SerializeField, Range(0f, 1f)] private float _attackChance = 0.35f;
     [SerializeField, Min(0f)] private float _reactionTime = 0.18f;
     [SerializeField] private AIAction _currentAction = AIAction.Wait;
 
