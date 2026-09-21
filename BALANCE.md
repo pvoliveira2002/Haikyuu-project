@@ -23,9 +23,11 @@ Values recorded from `PrototypeCourt.unity` and its attached scripts. No subject
 
 ## Receive
 
-- Force: 2.5
-- Vertical Component: 1.15
-- Horizontal Multiplier: 0.65
+- Controlled Flight Time: 1.15 s
+- Controlled Target: PlayerControlTarget, clamped to Player side
+- Direct Return Input: LeftAlt + E
+- Direct Return Flight Time: 1.2–1.8 s
+- Direct Return Net Clearance: 0.45 m
 - Contact Height: 0.3–1.7 m
 - Shared Contact Radius: 1.1 m
 
@@ -34,16 +36,19 @@ Values recorded from `PrototypeCourt.unity` and its attached scripts. No subject
 - Force: 2.35
 - Vertical Component: 1.2
 - Forward Component: 0.18
-- Contact Height: 0.8–2.3 m
+- Input Buffer: 0.15 s
+- Contact Height: 0.65–2.5 m
+- Minimum Forward Dot: -0.20
 
 ## Spike
 
 - Force: 4
 - Forward Bias: 1
 - Downward Bias: 0.12
-- Contact Height: 1.5–3 m
-- Action Window: 0.25 s
-- Input Buffer: 0.15 s
+- Contact Height: 1.35–3.1 m
+- Minimum Forward Dot: 0.08
+- Action Window: 0.35 s
+- Input Buffer: 0.20 s
 
 ## Block
 
@@ -164,3 +169,15 @@ Format: `Data | sistema | valor anterior → valor novo | motivo`
 2026-09-21 | AI Receive Force / Vertical Bias | 1.6 / 0.9 -> velocidade calculada pelo alvo e tempo de voo | Evita que uma forca fixa produza devolucoes baixas ou inalcançaveis.
 
 2026-09-21 | Camera | top-down: height 9.5, distance 11, FOV 48-54 -> third-person: height 2.5, distance 4.8, FOV 64 | Reforca o controle individual do atleta e a leitura da acao a frente.
+
+2026-09-21 | Receive | devolucao unica para frente -> E Controlled Receive no proprio lado / LeftAlt+E Direct Return | Playtest mostrou que Receive devolvia automaticamente para o adversario, impedindo construcao intencional de jogadas.
+
+2026-09-21 | Set | sem buffer, height 0.8-2.3, forward dot -0.15 -> buffer 0.15 s, height 0.65-2.5, forward dot -0.20 | Torna Q utilizavel pouco antes da bola entrar na zona.
+
+2026-09-21 | Spike | window 0.25, buffer 0.15, height 1.5-3.0, forward dot 0.15 -> window 0.35, buffer 0.20, height 1.35-3.1, forward dot 0.08 | Amplia moderadamente o timing sem remover a exigencia de estar no ar.
+
+2026-09-21 | Controlled Receive | flight time 0.85 s, target height 1.3 m -> flight time 1.15 s, target height 1.6 m | A recepcao anterior permanecia baixa demais para preparar o levantamento.
+
+2026-09-21 | Set | height 0.65-2.5, angle -0.20, input buffer 0.15 s -> valores preservados; alvo relativo 1.4 m acima/a frente e voo de 1.0 s | Polimento do fluxo ofensivo apos estabilizacao da recepcao.
+
+2026-09-21 | Spike | height 1.35-3.1, angle 0.08, window 0.35 s, input buffer 0.20 s -> valores preservados; direcao limita componente ao adversario e clearance de rede 0.25 m | Polimento do fluxo ofensivo apos estabilizacao da recepcao.

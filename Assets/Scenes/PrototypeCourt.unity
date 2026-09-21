@@ -403,6 +403,9 @@ MonoBehaviour:
   _aiController: {fileID: 2105}
   _trajectoryPredictor: {fileID: 2104}
   _cameraController: {fileID: 614}
+  _receiveSystem: {fileID: 528}
+  _setSystem: {fileID: 529}
+  _spikeSystem: {fileID: 534}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -985,7 +988,39 @@ Transform:
   - {fileID: 2101}
   - {fileID: 2111}
   - {fileID: 2121}
+  - {fileID: 2191}
   m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2191}
+  m_Layer: 0
+  m_Name: PlayerDirectReturnTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2191
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2190}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.21, z: 5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &510
 GameObject:
@@ -1117,6 +1152,7 @@ GameObject:
   - component: {fileID: 535}
   - component: {fileID: 536}
   - component: {fileID: 537}
+  - component: {fileID: 538}
   m_Layer: 0
   m_Name: Player 1 - Kageyama
   m_TagString: Untagged
@@ -1136,6 +1172,8 @@ Transform:
   - {fileID: 951}
   - {fileID: 2161}
   - {fileID: 2171}
+  - {fileID: 2181}
+  - {fileID: 2201}
   m_Father: {fileID: 501}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2170
@@ -1164,6 +1202,68 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 521}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2180
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2181}
+  m_Layer: 0
+  m_Name: PlayerControlTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2180}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.6, z: 1.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 521}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2201}
+  m_Layer: 0
+  m_Name: SpikePreparationTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2200}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.4, z: 1.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1337,10 +1437,13 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   _contactZone: {fileID: 533}
+  _targetResolver: {fileID: 538}
+  _netTopReference: {fileID: 2141}
   _receiveKey: 101
-  _receiveForce: 2.5
-  _verticalComponent: 1.15
-  _horizontalMultiplier: 0.65
+  _controlledFlightTime: 1.15
+  _directMinimumFlightTime: 1.2
+  _directMaximumFlightTime: 1.8
+  _directNetClearance: 0.45
   _minimumContactHeight: 0.3
   _maximumContactHeight: 1.7
   _minimumForwardDot: -0.25
@@ -1358,12 +1461,15 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _contactZone: {fileID: 533}
   _setKey: 113
+  _inputBuffer: 0.15
   _setForce: 2.35
   _verticalComponent: 1.2
   _forwardComponent: 0.18
-  _minimumContactHeight: 0.8
-  _maximumContactHeight: 2.3
-  _minimumForwardDot: -0.15
+  _spikePreparationTarget: {fileID: 2201}
+  _setFlightTime: 1
+  _minimumContactHeight: 0.65
+  _maximumContactHeight: 2.5
+  _minimumForwardDot: -0.2
 --- !u!114 &534
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1382,11 +1488,14 @@ MonoBehaviour:
   _spikeForce: 4
   _forwardBias: 1
   _downwardBias: 0.12
-  _minimumContactHeight: 1.5
-  _maximumContactHeight: 3
-  _spikeWindow: 0.25
-  _inputBuffer: 0.15
-  _minimumForwardDot: 0.15
+  _minimumContactHeight: 1.35
+  _maximumContactHeight: 3.1
+  _spikeWindow: 0.35
+  _inputBuffer: 0.2
+  _minimumForwardDot: 0.08
+  _netTopReference: {fileID: 2141}
+  _netClearance: 0.25
+  _minimumOpponentDirection: 0.35
 --- !u!114 &535
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1442,6 +1551,27 @@ MonoBehaviour:
   _localPosition: {x: 0, y: -1, z: 0}
   _localEulerAngles: {x: 0, y: 0, z: 0}
   _localScale: {x: 1, y: 1, z: 1}
+--- !u!114 &538
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ca92746ad6f4adcb3a10386f96da5af, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _controlledTarget: {fileID: 2181}
+  _directReturnTarget: {fileID: 2191}
+  _cameraTransform: {fileID: 611}
+  _controlledXLimits: {x: -4, y: 4}
+  _controlledZLimits: {x: -8, y: -1.25}
+  _directXLimits: {x: -3, y: 3}
+  _directZLimits: {x: 3.5, y: 7}
+  _directLateralVariation: 0.65
+  _cameraAimInfluence: 0.75
 --- !u!1 &950
 GameObject:
   m_ObjectHideFlags: 0

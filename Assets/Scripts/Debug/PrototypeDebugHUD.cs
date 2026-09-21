@@ -16,6 +16,9 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private AIOpponentController _aiController;
     [SerializeField] private BallTrajectoryPredictor _trajectoryPredictor;
     [SerializeField] private VolleyballCameraController _cameraController;
+    [SerializeField] private ReceiveSystem _receiveSystem;
+    [SerializeField] private SetSystem _setSystem;
+    [SerializeField] private SpikeSystem _spikeSystem;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -62,9 +65,12 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Longest {_playtestMonitor.LongestRally}  End {_playtestMonitor.LastRallyEndReason}\n" +
             $"CAMERA | Yaw {_cameraController.Yaw:F1}  Pitch {_cameraController.Pitch:F1}  " +
             $"Distance {_cameraController.Distance:F1}  BallAssist {_cameraController.BallAssistWeight:F2}  " +
-            $"PlayerCameraRelativeMovement true";
+            $"PlayerCameraRelativeMovement true\n" +
+            $"ACTION | Receive: {_receiveSystem.CurrentMode}  " +
+            $"Set: {_setSystem.AvailabilityStatus}  " +
+            $"Spike: {_spikeSystem.AvailabilityStatus}";
 
-        GUI.Box(new Rect(12f, 12f, 700f, 170f), text);
+        GUI.Box(new Rect(12f, 12f, 760f, 195f), text);
     }
 
     private bool HasRequiredReferences()
@@ -81,6 +87,9 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _aiDecision != null &&
                _aiController != null &&
                _trajectoryPredictor != null &&
-               _cameraController != null;
+               _cameraController != null &&
+               _receiveSystem != null &&
+               _setSystem != null &&
+               _spikeSystem != null;
     }
 }
