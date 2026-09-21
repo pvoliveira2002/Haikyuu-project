@@ -4,6 +4,8 @@ using UnityEngine;
 public sealed class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private Transform _movementReference;
+    [SerializeField] private CourtMovementBounds _movementBounds;
+    [SerializeField] private CourtSide _courtSide = CourtSide.Player;
     [SerializeField, Min(0f)] private float _moveSpeed = 5f;
     [SerializeField, Min(0f)] private float _runSpeed = 8f;
     [SerializeField, Min(0f)] private float _acceleration = 20f;
@@ -57,7 +59,12 @@ public sealed class PlayerMovement : MonoBehaviour
             targetVelocity,
             changeRate * controlMultiplier * Time.deltaTime);
 
-        _characterController.Move(_horizontalVelocity * Time.deltaTime);
+        Vector3 desiredPosition =
+            transform.position + _horizontalVelocity * Time.deltaTime;
+        Vector3 allowedPosition = _movementBounds != null
+            ? _movementBounds.ClampPosition(desiredPosition, _courtSide)
+            : desiredPosition;
+        _characterController.Move(allowedPosition - transform.position);
 
         if (inputDirection.sqrMagnitude > 0f)
         {

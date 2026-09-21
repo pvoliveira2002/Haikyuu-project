@@ -4,6 +4,7 @@ public sealed class SpikeSystem : MonoBehaviour
 {
     [SerializeField] private BallContactZone _contactZone;
     [SerializeField] private PlayerJump _playerJump;
+    [SerializeField] private SpikeTargetResolver _targetResolver;
     [SerializeField] private KeyCode _spikeKey = KeyCode.F;
     [SerializeField, Min(0f)] private float _spikeForce = 4f;
     [SerializeField, Min(0f)] private float _forwardBias = 1f;
@@ -16,6 +17,9 @@ public sealed class SpikeSystem : MonoBehaviour
     [SerializeField] private Transform _netTopReference;
     [SerializeField, Min(0f)] private float _netClearance = 0.25f;
     [SerializeField, Range(0f, 1f)] private float _minimumOpponentDirection = 0.35f;
+    [SerializeField, Min(0.1f)] private float _minimumFlightTime = 0.55f;
+    [SerializeField, Min(0.1f)] private float _maximumFlightTime = 1.1f;
+    [SerializeField, Min(0f)] private float _landingHeight = 0.21f;
 
     private float _bufferEndTime = float.NegativeInfinity;
     private float _spikeWindowEndTime = float.NegativeInfinity;
@@ -26,6 +30,17 @@ public sealed class SpikeSystem : MonoBehaviour
     private bool _lastAngleValid;
 
     public string AvailabilityStatus { get; private set; } = "GROUNDED";
+    public Vector3 LastTarget => _targetResolver != null
+        ? _targetResolver.LastTarget
+        : Vector3.zero;
+    public Vector3 PredictedLanding => _targetResolver != null
+        ? _targetResolver.PredictedLanding
+        : Vector3.zero;
+    public string ContactQuality => _targetResolver != null
+        ? _targetResolver.LastContactCategory
+        : "N/A";
+    public bool TargetInBounds =>
+        _targetResolver != null && _targetResolver.LastTargetInBounds;
 
     private void Awake()
     {
@@ -37,6 +52,11 @@ public sealed class SpikeSystem : MonoBehaviour
         if (_playerJump == null)
         {
             _playerJump = GetComponent<PlayerJump>();
+        }
+
+        if (_targetResolver == null)
+        {
+            _targetResolver = GetComponent<SpikeTargetResolver>();
         }
     }
 
@@ -128,10 +148,11 @@ public sealed class SpikeSystem : MonoBehaviour
             return;
         }
 
-        Vector3 spikeDirection = CalculateSpikeDirection(ball);
+        Vector3 spikeVelocity = CalculateSpikeVelocity(ball);
 
         ball.ResetVelocity();
-        ball.ApplyImpulse(spikeDirection, _spikeForce);
+        float impulse = Mathf.Min(spikeVelocity.magnitude * ball.Mass, _spikeForce);
+        ball.ApplyImpulse(spikeVelocity, impulse);
         ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Spike,
@@ -144,7 +165,7 @@ public sealed class SpikeSystem : MonoBehaviour
         Debug.Log("SPIKE ACCEPTED", this);
     }
 
-    private Vector3 CalculateSpikeDirection(VolleyballBall ball)
+    private Vector3 CalculateSpikeVelocity(VolleyballBall ball)
     {
         Vector3 horizontal = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
         if (horizontal.sqrMagnitude <= 0.0001f)
@@ -156,29 +177,91 @@ public sealed class SpikeSystem : MonoBehaviour
         horizontal.z = Mathf.Max(horizontal.z, _minimumOpponentDirection);
         horizontal.Normalize();
 
-        float verticalRatio = -_downwardBias;
-        if (_netTopReference != null && ball.transform.position.z < _netTopReference.position.z &&
-            horizontal.z > 0.01f)
+        float quality = CalculateContactQuality(ball, horizontal);
+        Vector3 target = _targetResolver != null
+            ? _targetResolver.ResolveTarget(
+                ball.transform.position,
+                horizontal,
+                Input.GetAxisRaw("Horizontal"),
+                quality,
+                _landingHeight)
+            : ball.transform.position + horizontal * 6f;
+        target.y = _landingHeight;
+
+        float flightTime = _minimumFlightTime;
+        Vector3 velocity = CalculateBallisticVelocity(
+            ball.transform.position,
+            target,
+            flightTime);
+        velocity.y -= _downwardBias;
+        while (flightTime < _maximumFlightTime &&
+            !ClearsNet(ball.transform.position, velocity, target))
         {
-            float distanceToNet =
-                (_netTopReference.position.z - ball.transform.position.z) / horizontal.z;
-            float requiredRise = Mathf.Max(
-                0f,
-                _netTopReference.position.y + _netClearance - ball.transform.position.y);
-            float launchSpeed = _spikeForce / ball.Mass;
-            float gravityTerm = 0.5f * -Physics.gravity.y *
-                distanceToNet * distanceToNet / (launchSpeed * launchSpeed);
-            float discriminant = distanceToNet * distanceToNet -
-                4f * gravityTerm * (requiredRise + gravityTerm);
-            if (gravityTerm > 0.0001f && discriminant >= 0f)
-            {
-                float requiredRatio =
-                    (distanceToNet - Mathf.Sqrt(discriminant)) / (2f * gravityTerm);
-                verticalRatio = Mathf.Max(verticalRatio, requiredRatio);
-            }
+            flightTime = Mathf.Min(flightTime + 0.025f, _maximumFlightTime);
+            velocity = CalculateBallisticVelocity(
+                ball.transform.position,
+                target,
+                flightTime);
+            velocity.y -= _downwardBias;
         }
 
-        return (horizontal * _forwardBias + Vector3.up * verticalRatio).normalized;
+        return velocity;
+    }
+
+    private float CalculateContactQuality(VolleyballBall ball, Vector3 horizontal)
+    {
+        float playerBase = transform.position.y - 1f;
+        float height = ball.transform.position.y - playerBase;
+        float idealHeight = Mathf.Lerp(
+            _minimumContactHeight,
+            _maximumContactHeight,
+            0.65f);
+        float heightRange = Mathf.Max(
+            0.1f,
+            (_maximumContactHeight - _minimumContactHeight) * 0.5f);
+        float heightQuality = 1f - Mathf.Clamp01(
+            Mathf.Abs(height - idealHeight) / heightRange);
+        Vector3 ballOffset = Vector3.ProjectOnPlane(
+            ball.transform.position - transform.position,
+            Vector3.up);
+        float forwardQuality = ballOffset.sqrMagnitude <= 0.0001f
+            ? 1f
+            : Mathf.InverseLerp(
+                _minimumForwardDot,
+                1f,
+                Vector3.Dot(horizontal, ballOffset.normalized));
+        return Mathf.Clamp01(heightQuality * 0.65f + forwardQuality * 0.35f);
+    }
+
+    private static Vector3 CalculateBallisticVelocity(
+        Vector3 origin,
+        Vector3 target,
+        float flightTime)
+    {
+        Vector3 velocity = (target - origin) / flightTime;
+        velocity.y += -0.5f * Physics.gravity.y * flightTime;
+        return velocity;
+    }
+
+    private bool ClearsNet(Vector3 origin, Vector3 velocity, Vector3 target)
+    {
+        if (_netTopReference == null ||
+            origin.z >= _netTopReference.position.z ||
+            target.z <= _netTopReference.position.z)
+        {
+            return true;
+        }
+
+        float netTime =
+            (_netTopReference.position.z - origin.z) / velocity.z;
+        if (netTime <= 0f)
+        {
+            return false;
+        }
+
+        float heightAtNet = origin.y + velocity.y * netTime +
+            0.5f * Physics.gravity.y * netTime * netTime;
+        return heightAtNet >= _netTopReference.position.y + _netClearance;
     }
 
     private void LogRejected(bool airborne)

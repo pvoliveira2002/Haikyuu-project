@@ -6,10 +6,15 @@ public sealed class BallTrajectoryPredictor : MonoBehaviour
     [SerializeField] private Collider _courtFloor;
     [SerializeField, Min(0f)] private float _ballRadius = 0.21f;
     [SerializeField, Min(0f)] private float _predictionUpdateThreshold = 0.25f;
+    [SerializeField, Min(0f)] private float _fastPredictionUpdateThreshold = 0.12f;
+    [SerializeField, Min(0f)] private float _incomingSpeedThreshold = 9f;
+    [SerializeField, Min(0f)] private float _urgentLandingTime = 1.2f;
 
     public Vector3 PredictedLandingPoint { get; private set; }
     public bool HasPrediction { get; private set; }
     public float TimeToLanding { get; private set; }
+    public bool IsFastIncomingBall { get; private set; }
+    public float IncomingSpeed => _ball != null ? _ball.Velocity.magnitude : 0f;
 
     private void Update()
     {
@@ -21,6 +26,7 @@ public sealed class BallTrajectoryPredictor : MonoBehaviour
         bool hadPrediction = HasPrediction;
         HasPrediction = false;
         TimeToLanding = 0f;
+        IsFastIncomingBall = false;
 
         if (_ball == null || _courtFloor == null)
         {
@@ -54,9 +60,17 @@ public sealed class BallTrajectoryPredictor : MonoBehaviour
             landingHeight,
             position.z + velocity.z * landingTime);
 
+        IsFastIncomingBall = velocity.z > 0f &&
+            velocity.magnitude >= _incomingSpeedThreshold &&
+            landingTime <= _urgentLandingTime &&
+            newLandingPoint.z > 0f;
+        float updateThreshold = IsFastIncomingBall
+            ? _fastPredictionUpdateThreshold
+            : _predictionUpdateThreshold;
+
         if (!hadPrediction ||
             Vector3.Distance(PredictedLandingPoint, newLandingPoint) >=
-            _predictionUpdateThreshold)
+            updateThreshold)
         {
             PredictedLandingPoint = newLandingPoint;
         }

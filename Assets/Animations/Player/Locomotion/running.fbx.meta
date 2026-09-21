@@ -1,0 +1,24 @@
+fileFormatVersion: 2
+guid: a103bca47d2342349af578a15c600003
+ModelImporter:
+  serializedVersion: 22200
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials: {materialImportMode: 0}
+  animations:
+    legacyGenerateAnimations: 4
+    resampleCurves: 1
+    animationCompression: 1
+    animationWrapMode: 2
+    clipAnimations: []
+  importAnimation: 1
+  humanDescription: {serializedVersion: 3, human: [], skeleton: [], armTwist: 0.5, foreArmTwist: 0.5, upperLegTwist: 0.5, legTwist: 0.5, armStretch: 0.05, legStretch: 0.05, feetSpacing: 0, globalScale: 1, rootMotionBoneName: '', hasTranslationDoF: 0, hasExtraRoot: 0, skeletonHasParents: 1}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 4ef17b6b2be9490d929c27246ce5fa52, type: 3}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 3
+  humanoidOversampling: 1
+  avatarSetup: 2
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  userData:
+  assetBundleName:
+  assetBundleVariant:

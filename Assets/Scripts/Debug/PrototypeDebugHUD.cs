@@ -14,11 +14,14 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private Transform _aiOpponent;
     [SerializeField] private AIOpponentDecision _aiDecision;
     [SerializeField] private AIOpponentController _aiController;
+    [SerializeField] private AIOpponentActions _aiActions;
     [SerializeField] private BallTrajectoryPredictor _trajectoryPredictor;
     [SerializeField] private VolleyballCameraController _cameraController;
     [SerializeField] private ReceiveSystem _receiveSystem;
     [SerializeField] private SetSystem _setSystem;
     [SerializeField] private SpikeSystem _spikeSystem;
+    [SerializeField] private CourtMovementBounds _movementBounds;
+    [SerializeField] private PlayerAnimatedVisual _playerAnimatedVisual;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -61,6 +64,21 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"AI | {_aiDecision.CurrentAction}  Distance {aiDistance:F1}  " +
             $"Landing {timeToLanding}  Reach {_aiController.CanReachCurrentTarget}  " +
             $"Reaction {_aiReactionTime:F2}s\n" +
+            $"AI DEFENSE | IncomingSpeed {_trajectoryPredictor.IncomingSpeed:F2}  " +
+            $"TimeToLanding {_trajectoryPredictor.TimeToLanding:F2}  " +
+            $"Distance {_aiController.DistanceToLanding:F2}  " +
+            $"TravelTime {_aiController.EstimatedTravelTime:F2}\n" +
+            $"Urgency {_aiController.DefensiveUrgency}  " +
+            $"ReactionDelay {_aiDecision.CurrentReactionDelay:F2}  " +
+            $"Target {_aiController.MovementTarget:F2}  " +
+            $"CanReach {_aiController.CanReachCurrentTarget}\n" +
+            $"AI CONTACT | Inside Zone {_aiActions.IsBallInsideContactZone}  " +
+            $"Distance {_aiActions.CurrentBallDistance:F2}  " +
+            $"Height Valid {_aiActions.IsHeightValid}  " +
+            $"Angle Valid {_aiActions.IsAngleValid}\n" +
+            $"Cooldown {_aiActions.IsCooldownReady}  " +
+            $"Decision {_aiDecision.CurrentAction}  " +
+            $"Emergency Fallback {_aiActions.IsEmergencyFallbackActive}\n" +
             $"Rally | Touches {_playtestMonitor.RallyTouches}  " +
             $"Longest {_playtestMonitor.LongestRally}  End {_playtestMonitor.LastRallyEndReason}\n" +
             $"CAMERA | Yaw {_cameraController.Yaw:F1}  Pitch {_cameraController.Pitch:F1}  " +
@@ -68,9 +86,24 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"PlayerCameraRelativeMovement true\n" +
             $"ACTION | Receive: {_receiveSystem.CurrentMode}  " +
             $"Set: {_setSystem.AvailabilityStatus}  " +
-            $"Spike: {_spikeSystem.AvailabilityStatus}";
+            $"Spike: {_spikeSystem.AvailabilityStatus}\n" +
+            $"SET TARGET {_setSystem.LastTarget:F2}  " +
+            $"DIST TO NET {_setSystem.LastDistanceToNet:F2}  " +
+            $"APEX {_setSystem.SetApexHeight:F2}\n" +
+            $"SPIKE TARGET {_spikeSystem.LastTarget:F2}  " +
+            $"QUALITY {_spikeSystem.ContactQuality}  " +
+            $"LANDING {_spikeSystem.PredictedLanding:F2}  " +
+            $"IN BOUNDS {_spikeSystem.TargetInBounds}\n" +
+            $"TEAM SIDE Player {_movementBounds.Describe(CourtSide.Player)}  " +
+            $"NET BLOCKED {_movementBounds.WasBlocked(CourtSide.Player)}\n" +
+            $"TEAM SIDE Opponent {_movementBounds.Describe(CourtSide.Opponent)}  " +
+            $"NET BLOCKED {_movementBounds.WasBlocked(CourtSide.Opponent)}\n" +
+            $"ANIMATION | State {_playerAnimatedVisual.CurrentAnimationState}  " +
+            $"Speed {_playerAnimatedVisual.AnimationSpeed:F2}  " +
+            $"Grounded {_playerAnimatedVisual.AnimationGrounded}  " +
+            $"VerticalVelocity {_playerAnimatedVisual.AnimationVerticalVelocity:F2}";
 
-        GUI.Box(new Rect(12f, 12f, 760f, 195f), text);
+        GUI.Box(new Rect(12f, 12f, 950f, 395f), text);
     }
 
     private bool HasRequiredReferences()
@@ -86,10 +119,13 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _touchTracker != null &&
                _aiDecision != null &&
                _aiController != null &&
+               _aiActions != null &&
                _trajectoryPredictor != null &&
                _cameraController != null &&
                _receiveSystem != null &&
                _setSystem != null &&
-               _spikeSystem != null;
+               _spikeSystem != null &&
+               _movementBounds != null &&
+               _playerAnimatedVisual != null;
     }
 }

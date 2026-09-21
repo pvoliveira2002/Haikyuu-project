@@ -9,7 +9,12 @@ public sealed class SetSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _verticalComponent = 1.2f;
     [SerializeField, Min(0f)] private float _forwardComponent = 0.18f;
     [SerializeField] private Transform _spikePreparationTarget;
-    [SerializeField, Min(0.1f)] private float _setFlightTime = 1f;
+    [SerializeField] private Transform _netReference;
+    [SerializeField] private CourtSide _courtSide = CourtSide.Player;
+    [SerializeField, Min(0.8f)] private float _attackDistanceFromNet = 1.4f;
+    [SerializeField, Min(0f)] private float _setTargetHeight = 2.25f;
+    [SerializeField, Min(0f)] private float _setApexHeight = 3.3f;
+    [SerializeField, Min(0f)] private float _lateralTargetInfluence = 1f;
     [SerializeField, Min(0f)] private float _minimumContactHeight = 0.65f;
     [SerializeField, Min(0f)] private float _maximumContactHeight = 2.5f;
     [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = -0.2f;
@@ -21,6 +26,9 @@ public sealed class SetSystem : MonoBehaviour
     private bool _lastAngleValid;
 
     public string AvailabilityStatus { get; private set; } = "BUFFER";
+    public Vector3 LastTarget { get; private set; }
+    public float LastDistanceToNet { get; private set; }
+    public float SetApexHeight => _setApexHeight;
 
     private void Awake()
     {
@@ -120,12 +128,32 @@ public sealed class SetSystem : MonoBehaviour
             return fallbackDirection.normalized * (_setForce / ball.Mass);
         }
 
-        Vector3 target = _spikePreparationTarget.position;
-        target.x = Mathf.Clamp(target.x, -4f, 4f);
-        target.z = Mathf.Clamp(target.z, -8f, -1.25f);
-        Vector3 displacement = target - ball.transform.position;
-        Vector3 velocity = displacement / _setFlightTime;
-        velocity.y += -0.5f * Physics.gravity.y * _setFlightTime;
+        float netZ = _netReference != null ? _netReference.position.z : 0f;
+        float sideDirection = _courtSide == CourtSide.Player ? -1f : 1f;
+        Vector3 target = new Vector3(
+            Mathf.Clamp(
+                transform.position.x + transform.forward.x * _lateralTargetInfluence,
+                -3.9f,
+                3.9f),
+            _setTargetHeight,
+            netZ + sideDirection * _attackDistanceFromNet);
+        LastTarget = target;
+        LastDistanceToNet = Mathf.Abs(target.z - netZ);
+        _spikePreparationTarget.position = target;
+
+        float gravity = -Physics.gravity.y;
+        float apexHeight = Mathf.Max(
+            _setApexHeight,
+            ball.transform.position.y + 0.4f,
+            target.y + 0.4f);
+        float upwardSpeed = Mathf.Sqrt(
+            2f * gravity * Mathf.Max(0f, apexHeight - ball.transform.position.y));
+        float riseTime = upwardSpeed / gravity;
+        float fallTime = Mathf.Sqrt(
+            2f * Mathf.Max(0f, apexHeight - target.y) / gravity);
+        float flightTime = Mathf.Max(0.35f, riseTime + fallTime);
+        Vector3 velocity = (target - ball.transform.position) / flightTime;
+        velocity.y = upwardSpeed;
         return velocity;
     }
 

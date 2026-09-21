@@ -181,3 +181,19 @@ Format: `Data | sistema | valor anterior → valor novo | motivo`
 2026-09-21 | Set | height 0.65-2.5, angle -0.20, input buffer 0.15 s -> valores preservados; alvo relativo 1.4 m acima/a frente e voo de 1.0 s | Polimento do fluxo ofensivo apos estabilizacao da recepcao.
 
 2026-09-21 | Spike | height 1.35-3.1, angle 0.08, window 0.35 s, input buffer 0.20 s -> valores preservados; direcao limita componente ao adversario e clearance de rede 0.25 m | Polimento do fluxo ofensivo apos estabilizacao da recepcao.
+
+2026-09-21 | Set | base force 2.35, alvo 1.4 m relativo ao Player -> base force 2.35 preservada, PlayerAttackSetTarget calculado a 1.4 m da rede, target height 2.25 m e apex 3.3 m | Set precisava preparar melhor o ataque.
+
+2026-09-21 | Spike | base force 4 e direcao por impulso -> base force 4 como limite, alvo balistico com safe area X [-3.9, 3.9] / Z [1.0, 8.2], net clearance 0.25 m e assistencia por qualidade do contato | Spikes estavam ultrapassando sistematicamente o fundo da quadra.
+
+2026-09-21 | Movement | sem limite compartilhado -> Player X [-4.25, 4.25] / Z [-8.5, -0.35], Opponent X [-4.25, 4.25] / Z [0.35, 8.5], net buffer 0.35 m | Jogadores nao devem invadir fisicamente o lado adversario.
+
+2026-09-21 | AI Defense Reaction | normal 0.18 s -> normal 0.18 s / fast ball 0.10 s | Playtest mostrou resposta defensiva excessivamente lenta contra Spike.
+
+2026-09-21 | AI Defense Movement | move speed 5.0 -> 5.5; acceleration 16 -> 22; deceleration 20 preservada | Playtest mostrou resposta defensiva excessivamente lenta contra Spike.
+
+2026-09-21 | AI Defense Prediction | normal threshold 0.25 m -> normal 0.25 m / fast ball 0.12 m; fast incoming threshold 9 m/s | Playtest mostrou resposta defensiva excessivamente lenta contra Spike.
+
+2026-09-21 | AI Defense Reach | position tolerance normal 0.30 m -> normal 0.30 m / urgent 0.40 m; reachability margin 1.10; receive distance 1.10 m -> 1.20 m | Playtest mostrou resposta defensiva excessivamente lenta contra Spike.
+
+2026-09-21 | AI Receive Contact | sphere radius 1.05 m / offset (0, 0.6, 0.9) -> radius 1.20 m / offset (0, 0.8, 0.25); receive angle sem validacao fisica -> -0.35; height sem validacao fisica -> 0.25-2.0 m; emergency radius 0.85 m; close distance 0.65 m | Playtest mostrou falha de contato da IA mesmo com bola fisicamente proxima.

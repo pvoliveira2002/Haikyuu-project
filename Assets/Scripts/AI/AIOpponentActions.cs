@@ -11,6 +11,12 @@ public sealed class AIOpponentActions : MonoBehaviour
     [SerializeField] private Transform _player;
     [SerializeField] private Transform _netTopReference;
     [SerializeField] private BallTouchTracker _touchTracker;
+    [SerializeField] private AIOpponentController _controller;
+    [SerializeField, Min(0f)] private float _receiveMinimumHeight = 0.25f;
+    [SerializeField, Min(0f)] private float _receiveMaximumHeight = 2f;
+    [SerializeField, Range(-1f, 1f)] private float _receiveMinimumForwardDot = -0.35f;
+    [SerializeField, Min(0f)] private float _emergencyContactRadius = 0.85f;
+    [SerializeField, Min(0f)] private float _emergencyCloseDistance = 0.65f;
     [SerializeField, Min(0f)] private float _attackForce = 2.1f;
     [SerializeField, Min(0f)] private float _attackVerticalBias = 0.35f;
     [SerializeField, Min(0f)] private float _attackDownwardBias = 0.05f;
@@ -30,6 +36,16 @@ public sealed class AIOpponentActions : MonoBehaviour
     private bool _ballInsideContactZone;
     private bool _contactConsumed;
     private Vector3 _currentContactTarget;
+    private Vector3 _previousBallPosition;
+    private bool _hasPreviousBallPosition;
+    private bool _rejectionLoggedForApproach;
+
+    public bool IsBallInsideContactZone => _ballInsideContactZone;
+    public float CurrentBallDistance { get; private set; }
+    public bool IsHeightValid { get; private set; }
+    public bool IsAngleValid { get; private set; }
+    public bool IsCooldownReady => Time.time >= _nextContactTime;
+    public bool IsEmergencyFallbackActive { get; private set; }
 
     private void Awake()
     {
@@ -39,6 +55,28 @@ public sealed class AIOpponentActions : MonoBehaviour
         }
 
         _contactZone.isTrigger = true;
+    }
+
+    private void Update()
+    {
+        if (_ball == null || _contactZone == null)
+        {
+            return;
+        }
+
+        EvaluatePhysicalContact(out bool physicallyReachable, out bool sweptContact);
+        if (physicallyReachable)
+        {
+            TryExecuteAction(sweptContact);
+        }
+        else if (CurrentBallDistance > GetContactRadius() + 0.25f)
+        {
+            _contactConsumed = false;
+            _rejectionLoggedForApproach = false;
+        }
+
+        _previousBallPosition = _ball.transform.position;
+        _hasPreviousBallPosition = true;
     }
 
     private void OnEnable()
@@ -69,7 +107,8 @@ public sealed class AIOpponentActions : MonoBehaviour
 
         _ballInsideContactZone = true;
         _contactConsumed = false;
-        TryExecuteAction();
+        EvaluatePhysicalContact(out _, out bool sweptContact);
+        TryExecuteAction(sweptContact);
     }
 
     private void OnTriggerStay(Collider other)
@@ -80,7 +119,8 @@ public sealed class AIOpponentActions : MonoBehaviour
         }
 
         _ballInsideContactZone = true;
-        TryExecuteAction();
+        EvaluatePhysicalContact(out _, out bool sweptContact);
+        TryExecuteAction(sweptContact);
     }
 
     private void OnTriggerExit(Collider other)
@@ -91,23 +131,43 @@ public sealed class AIOpponentActions : MonoBehaviour
         }
 
         _ballInsideContactZone = false;
-        _contactConsumed = false;
     }
 
-    private void TryExecuteAction()
+    private void TryExecuteAction(bool sweptContact)
     {
-        if (!_rallyActive ||
-            !_ballInsideContactZone ||
-            _contactConsumed ||
-            _decision == null ||
-            _ball == null ||
-            _returnTarget == null ||
-            Time.time < _nextContactTime)
+        if (_decision == null || _ball == null || _returnTarget == null)
         {
             return;
         }
 
-        if (_decision.CurrentAction == AIAction.Attack)
+        bool defensiveBall = IsDefensiveBall();
+        bool physicallyReachable = _ballInsideContactZone ||
+            IsEmergencyFallbackActive || sweptContact;
+        bool closeContact = CurrentBallDistance <= _emergencyCloseDistance;
+        bool angleAccepted = IsAngleValid || closeContact;
+        string rejectionReason = GetRejectionReason(
+            defensiveBall,
+            physicallyReachable,
+            angleAccepted);
+        if (rejectionReason != null)
+        {
+            LogRejectedOnce(rejectionReason);
+            return;
+        }
+
+        if (defensiveBall)
+        {
+            if (ExecuteReceive())
+            {
+                Debug.Log(
+                    $"AI CONTACT ACCEPTED | Distance={CurrentBallDistance:F2} | " +
+                    $"Trigger={_ballInsideContactZone} | " +
+                    $"EmergencyFallback={IsEmergencyFallbackActive || sweptContact} | " +
+                    $"Decision={_decision.CurrentAction}",
+                    this);
+            }
+        }
+        else if (_decision.CurrentAction == AIAction.Attack)
         {
             ExecuteAttack();
         }
@@ -118,7 +178,104 @@ public sealed class AIOpponentActions : MonoBehaviour
         }
     }
 
-    private void ExecuteReceive()
+    private void EvaluatePhysicalContact(
+        out bool physicallyReachable,
+        out bool sweptContact)
+    {
+        Vector3 contactCenter = GetContactCenter();
+        Vector3 ballPosition = _ball.transform.position;
+        CurrentBallDistance = Vector3.Distance(contactCenter, ballPosition);
+        float relativeHeight = ballPosition.y - transform.position.y + 1f;
+        IsHeightValid = relativeHeight >= _receiveMinimumHeight &&
+            relativeHeight <= _receiveMaximumHeight;
+
+        Vector3 horizontalOffset = Vector3.ProjectOnPlane(
+            ballPosition - transform.position,
+            Vector3.up);
+        IsAngleValid = horizontalOffset.sqrMagnitude <= 0.0001f ||
+            Vector3.Dot(transform.forward, horizontalOffset.normalized) >=
+            _receiveMinimumForwardDot;
+        IsEmergencyFallbackActive = CurrentBallDistance <= _emergencyContactRadius;
+        sweptContact = _hasPreviousBallPosition &&
+            DistanceToSegment(
+                contactCenter,
+                _previousBallPosition,
+                ballPosition) <= _emergencyContactRadius;
+        physicallyReachable = _ballInsideContactZone ||
+            IsEmergencyFallbackActive || sweptContact;
+    }
+
+    private string GetRejectionReason(
+        bool defensiveBall,
+        bool physicallyReachable,
+        bool angleAccepted)
+    {
+        if (!_rallyActive) return "RallyInactive";
+        if (!defensiveBall) return "NotIncoming";
+        if (!physicallyReachable) return "OutOfReach";
+        if (!IsHeightValid) return "Height";
+        if (!angleAccepted) return "Angle";
+        if (!IsCooldownReady) return "Cooldown";
+        if (_contactConsumed) return "Consumed";
+        return null;
+    }
+
+    private bool IsDefensiveBall()
+    {
+        return _ball.Velocity.z > 0f || _ball.transform.position.z >= 0f;
+    }
+
+    private void LogRejectedOnce(string reason)
+    {
+        if (_rejectionLoggedForApproach || CurrentBallDistance > GetContactRadius() + 0.25f)
+        {
+            return;
+        }
+
+        _rejectionLoggedForApproach = true;
+        Debug.Log(
+            $"AI CONTACT REJECTED | Distance={CurrentBallDistance:F2} | " +
+            $"InsideTrigger={_ballInsideContactZone} | " +
+            $"EmergencyRange={IsEmergencyFallbackActive} | " +
+            $"HeightValid={IsHeightValid} | AngleValid={IsAngleValid} | " +
+            $"CooldownReady={IsCooldownReady} | RallyActive={_rallyActive} | " +
+            $"Decision={_decision.CurrentAction} | " +
+            $"CanReach={(_controller != null && _controller.CanReachCurrentTarget)} | " +
+            $"Reason={reason}",
+            this);
+    }
+
+    private Vector3 GetContactCenter()
+    {
+        return _contactZone.transform.TransformPoint(_contactZone.center);
+    }
+
+    private float GetContactRadius()
+    {
+        return _contactZone.radius * Mathf.Max(
+            _contactZone.transform.lossyScale.x,
+            _contactZone.transform.lossyScale.y,
+            _contactZone.transform.lossyScale.z);
+    }
+
+    private static float DistanceToSegment(
+        Vector3 point,
+        Vector3 segmentStart,
+        Vector3 segmentEnd)
+    {
+        Vector3 segment = segmentEnd - segmentStart;
+        float lengthSquared = segment.sqrMagnitude;
+        if (lengthSquared <= 0.0001f)
+        {
+            return Vector3.Distance(point, segmentStart);
+        }
+
+        float t = Mathf.Clamp01(
+            Vector3.Dot(point - segmentStart, segment) / lengthSquared);
+        return Vector3.Distance(point, segmentStart + segment * t);
+    }
+
+    private bool ExecuteReceive()
     {
         SelectContactTarget();
         if (!TryBuildPlayableReceive(
@@ -127,7 +284,7 @@ public sealed class AIOpponentActions : MonoBehaviour
                 out float force,
                 out float flightTime))
         {
-            return;
+            return false;
         }
 
         ApplyBallAction(
@@ -136,6 +293,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             "AI Receive",
             _currentContactTarget,
             flightTime);
+        return true;
     }
 
     private void ExecuteAttack()
@@ -362,6 +520,7 @@ public sealed class AIOpponentActions : MonoBehaviour
         _touchTracker?.RegisterTouch(CourtSide.Opponent);
         _nextContactTime = Time.time + _contactCooldown;
         _contactConsumed = true;
+        _rejectionLoggedForApproach = false;
         _decision.NotifyActionCompleted();
 
         if (intendedFlightTime <= 0f &&
@@ -441,6 +600,9 @@ public sealed class AIOpponentActions : MonoBehaviour
         _ballInsideContactZone = false;
         _contactConsumed = false;
         _nextContactTime = 0f;
+        _hasPreviousBallPosition = false;
+        _rejectionLoggedForApproach = false;
+        IsEmergencyFallbackActive = false;
     }
 
     private void OnDrawGizmosSelected()

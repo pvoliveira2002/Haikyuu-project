@@ -20,12 +20,13 @@ public sealed class AIOpponentDecision : MonoBehaviour
     [SerializeField] private Collider _allowedCourtArea;
     [SerializeField, Min(0f)] private float _receiveMinHeight = 0.3f;
     [SerializeField, Min(0f)] private float _receiveMaxHeight = 1.9f;
-    [SerializeField, Min(0f)] private float _receiveDistance = 1.1f;
+    [SerializeField, Min(0f)] private float _receiveDistance = 1.2f;
     [SerializeField, Min(0f)] private float _attackMinHeight = 1.6f;
     [SerializeField, Min(0f)] private float _attackMaxHeight = 3f;
     [SerializeField, Min(0f)] private float _attackDistance = 1f;
     [SerializeField, Range(0f, 1f)] private float _attackChance = 0.35f;
     [SerializeField, Min(0f)] private float _reactionTime = 0.18f;
+    [SerializeField, Min(0f)] private float _fastBallReactionTime = 0.1f;
     [SerializeField] private AIAction _currentAction = AIAction.Wait;
 
     private AIAction _pendingAction;
@@ -34,6 +35,10 @@ public sealed class AIOpponentDecision : MonoBehaviour
     private bool _attackSelected;
 
     public AIAction CurrentAction => _currentAction;
+    public float CurrentReactionDelay =>
+        _trajectoryPredictor != null && _trajectoryPredictor.IsFastIncomingBall
+            ? _fastBallReactionTime
+            : _reactionTime;
 
     private void OnEnable()
     {
@@ -68,7 +73,7 @@ public sealed class AIOpponentDecision : MonoBehaviour
         if (desiredAction != _pendingAction)
         {
             _pendingAction = desiredAction;
-            _pendingActionTime = Time.time + _reactionTime;
+            _pendingActionTime = Time.time + CurrentReactionDelay;
             return;
         }
 
@@ -104,6 +109,15 @@ public sealed class AIOpponentDecision : MonoBehaviour
         float horizontalDistance = horizontalOffset.magnitude;
         bool ballOnAISide = IsInsideAllowedArea(ballPosition);
         float verticalSpeed = _ball.Velocity.y;
+
+        if (_trajectoryPredictor.IsFastIncomingBall)
+        {
+            bool canReceiveNow = ballOnAISide &&
+                IsWithinHeight(ballPosition.y, _receiveMinHeight, _receiveMaxHeight) &&
+                horizontalDistance <= _receiveDistance &&
+                verticalSpeed <= 0.5f;
+            return canReceiveNow ? AIAction.Receive : AIAction.PrepareReceive;
+        }
 
         bool attackOpportunity = ballOnAISide &&
             IsWithinHeight(ballPosition.y, _attackMinHeight, _attackMaxHeight) &&

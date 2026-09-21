@@ -246,6 +246,7 @@ GameObject:
   - component: {fileID: 207}
   - component: {fileID: 208}
   - component: {fileID: 209}
+  - component: {fileID: 2210}
   m_Layer: 0
   m_Name: Court
   m_TagString: Untagged
@@ -401,13 +402,31 @@ MonoBehaviour:
   _aiOpponent: {fileID: 2101}
   _aiDecision: {fileID: 2106}
   _aiController: {fileID: 2105}
+  _aiActions: {fileID: 2133}
   _trajectoryPredictor: {fileID: 2104}
   _cameraController: {fileID: 614}
   _receiveSystem: {fileID: 528}
   _setSystem: {fileID: 529}
   _spikeSystem: {fileID: 534}
+  _movementBounds: {fileID: 2210}
+  _playerAnimatedVisual: {fileID: 537}
   _aiReactionTime: 0.18
   _visible: 0
+--- !u!114 &2210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ba6d60d9b34b2ca2776836974fdada, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _horizontalLimits: {x: -4.25, y: 4.25}
+  _playerDepthLimits: {x: -8.5, y: -0.35}
+  _opponentDepthLimits: {x: 0.35, y: 8.5}
 --- !u!1 &210
 GameObject:
   m_ObjectHideFlags: 0
@@ -1153,6 +1172,7 @@ GameObject:
   - component: {fileID: 536}
   - component: {fileID: 537}
   - component: {fileID: 538}
+  - component: {fileID: 539}
   m_Layer: 0
   m_Name: Player 1 - Kageyama
   m_TagString: Untagged
@@ -1248,7 +1268,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2201}
   m_Layer: 0
-  m_Name: SpikePreparationTarget
+  m_Name: PlayerAttackSetTarget
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1404,6 +1424,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   _movementReference: {fileID: 611}
+  _movementBounds: {fileID: 2210}
+  _courtSide: 0
   _moveSpeed: 5
   _runSpeed: 8
   _acceleration: 20
@@ -1466,7 +1488,12 @@ MonoBehaviour:
   _verticalComponent: 1.2
   _forwardComponent: 0.18
   _spikePreparationTarget: {fileID: 2201}
-  _setFlightTime: 1
+  _netReference: {fileID: 2141}
+  _courtSide: 0
+  _attackDistanceFromNet: 1.4
+  _setTargetHeight: 2.25
+  _setApexHeight: 3.3
+  _lateralTargetInfluence: 1
   _minimumContactHeight: 0.65
   _maximumContactHeight: 2.5
   _minimumForwardDot: -0.2
@@ -1484,6 +1511,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _contactZone: {fileID: 533}
   _playerJump: {fileID: 527}
+  _targetResolver: {fileID: 539}
   _spikeKey: 102
   _spikeForce: 4
   _forwardBias: 1
@@ -1496,6 +1524,9 @@ MonoBehaviour:
   _netTopReference: {fileID: 2141}
   _netClearance: 0.25
   _minimumOpponentDirection: 0.35
+  _minimumFlightTime: 0.55
+  _maximumFlightTime: 1.1
+  _landingHeight: 0.21
 --- !u!114 &535
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1546,11 +1577,17 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _modelPrefab: {fileID: 100100000, guid: 4ef17b6b2be9490d929c27246ce5fa52, type: 3}
   _defaultAnimation: {fileID: 7400000, guid: 4ef17b6b2be9490d929c27246ce5fa52, type: 3}
-  _animatorController: {fileID: 9100000, guid: ed511b693eda4e83bd5a46960770481a, type: 2}
+  _animatorController: {fileID: 9100000, guid: b201bca47d2342349af578a15c600001, type: 2}
   _staticFallback: {fileID: 2160}
   _localPosition: {x: 0, y: -1, z: 0}
   _localEulerAngles: {x: 0, y: 0, z: 0}
   _localScale: {x: 1, y: 1, z: 1}
+  _speedSmoothing: 12
+  _idleThreshold: 0.15
+  _runThreshold: 6.5
+  _verticalThreshold: 0.1
+  _runToStopDuration: 0.3
+  _landingDuration: 0.25
 --- !u!114 &538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1572,6 +1609,23 @@ MonoBehaviour:
   _directZLimits: {x: 3.5, y: 7}
   _directLateralVariation: 0.65
   _cameraAimInfluence: 0.75
+--- !u!114 &539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35a5995eea724f1cbad241f9a39122a8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _opponentHorizontalLimits: {x: -3.9, y: 3.9}
+  _opponentDepthLimits: {x: 1, y: 8.2}
+  _lateralInputInfluence: 2
+  _defaultTargetDepth: 5.5
+  _minimumAimAssist: 0.55
 --- !u!1 &950
 GameObject:
   m_ObjectHideFlags: 0
@@ -2218,6 +2272,9 @@ MonoBehaviour:
   _courtFloor: {fileID: 224}
   _ballRadius: 0.21
   _predictionUpdateThreshold: 0.25
+  _fastPredictionUpdateThreshold: 0.12
+  _incomingSpeedThreshold: 9
+  _urgentLandingTime: 1.2
 --- !u!114 &2105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2235,10 +2292,14 @@ MonoBehaviour:
   _rallyEndDetector: {fileID: 202}
   _homePosition: {fileID: 2111}
   _allowedCourtArea: {fileID: 224}
-  _moveSpeed: 5
-  _acceleration: 16
+  _movementBounds: {fileID: 2210}
+  _courtSide: 1
+  _moveSpeed: 5.5
+  _acceleration: 22
   _deceleration: 20
   _positionTolerance: 0.3
+  _urgentPositionTolerance: 0.4
+  _reachabilityMargin: 1.1
   _positioningOffset: 0.8
   _courtPadding: 0.5
 --- !u!114 &2106
@@ -2260,12 +2321,13 @@ MonoBehaviour:
   _allowedCourtArea: {fileID: 224}
   _receiveMinHeight: 0.3
   _receiveMaxHeight: 1.9
-  _receiveDistance: 1.1
+  _receiveDistance: 1.2
   _attackMinHeight: 1.6
   _attackMaxHeight: 3
   _attackDistance: 1
   _attackChance: 0.35
   _reactionTime: 0.18
+  _fastBallReactionTime: 0.1
   _currentAction: 1
 --- !u!1 &2130
 GameObject:
@@ -2294,7 +2356,7 @@ Transform:
   m_GameObject: {fileID: 2130}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6, z: 0.9}
+  m_LocalPosition: {x: 0, y: 0.8, z: 0.25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2319,7 +2381,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.05
+  m_Radius: 1.2
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &2133
 MonoBehaviour:
@@ -2341,6 +2403,12 @@ MonoBehaviour:
   _player: {fileID: 521}
   _netTopReference: {fileID: 2141}
   _touchTracker: {fileID: 517}
+  _controller: {fileID: 2105}
+  _receiveMinimumHeight: 0.25
+  _receiveMaximumHeight: 2
+  _receiveMinimumForwardDot: -0.35
+  _emergencyContactRadius: 0.85
+  _emergencyCloseDistance: 0.65
   _attackForce: 2.1
   _attackVerticalBias: 0.35
   _attackDownwardBias: 0.05
@@ -2509,6 +2577,7 @@ MonoBehaviour:
   _ball: {fileID: 516}
   _returnTarget: {fileID: 711}
   _contactZone: {fileID: 704}
+  _movementBounds: {fileID: 2210}
   _moveSpeed: 4.5
   _returnForce: 1.8
   _verticalBias: 0.55

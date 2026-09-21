@@ -6,6 +6,7 @@ public sealed class TrainingBotController : MonoBehaviour
     [SerializeField] private VolleyballBall _ball;
     [SerializeField] private Transform _returnTarget;
     [SerializeField] private SphereCollider _contactZone;
+    [SerializeField] private CourtMovementBounds _movementBounds;
     [SerializeField, Min(0f)] private float _moveSpeed = 4.5f;
     [SerializeField, Min(0f)] private float _returnForce = 1.8f;
     [SerializeField, Min(0f)] private float _verticalBias = 0.55f;
@@ -40,10 +41,13 @@ public sealed class TrainingBotController : MonoBehaviour
             transform.position.y,
             Mathf.Clamp(ballPosition.z, _depthLimits.x, _depthLimits.y));
 
-        transform.position = Vector3.MoveTowards(
+        Vector3 nextPosition = Vector3.MoveTowards(
             transform.position,
             targetPosition,
             _moveSpeed * Time.deltaTime);
+        transform.position = _movementBounds != null
+            ? _movementBounds.ClampPosition(nextPosition, CourtSide.Opponent)
+            : nextPosition;
     }
 
     private void OnTriggerStay(Collider other)
