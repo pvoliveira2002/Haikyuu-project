@@ -129,19 +129,19 @@ public sealed class AIOpponentDecision : MonoBehaviour
             return canSetNow ? AIAction.Set : AIAction.PrepareReceive;
         }
 
-        if (_trajectoryPredictor == null ||
-            !_trajectoryPredictor.HasPrediction ||
-            !IsInsideAllowedArea(_trajectoryPredictor.PredictedLandingPoint))
-        {
-            return AIAction.ReturnHome;
-        }
-
         if (plannedAction == TeamPlayAction.Attack)
         {
             bool canAttackNow = ballOnAISide &&
                 IsWithinHeight(ballPosition.y, _attackMinHeight, _attackMaxHeight) &&
                 horizontalDistance <= _attackDistance * 1.5f;
             return canAttackNow ? AIAction.Attack : AIAction.PrepareAttack;
+        }
+
+        if (_trajectoryPredictor == null ||
+            !_trajectoryPredictor.HasPrediction ||
+            !IsInsideAllowedArea(_trajectoryPredictor.PredictedLandingPoint))
+        {
+            return AIAction.ReturnHome;
         }
 
         if (_trajectoryPredictor.IsFastIncomingBall)

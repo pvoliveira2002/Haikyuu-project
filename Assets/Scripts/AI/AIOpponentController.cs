@@ -12,6 +12,7 @@ public sealed class AIOpponentController : MonoBehaviour
     [SerializeField] private TeamMember _teamMember;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
+    [SerializeField] private TeamPositioningController _teamPositioningController;
     [SerializeField, Min(0f)] private float _moveSpeed = 5.5f;
     [SerializeField, Min(0f)] private float _acceleration = 22f;
     [SerializeField, Min(0f)] private float _deceleration = 20f;
@@ -55,7 +56,14 @@ public sealed class AIOpponentController : MonoBehaviour
             : _homePosition;
         Vector3 target = home.position;
 
-        if (_teamPlayCoordinator != null &&
+        if (_teamPositioningController != null &&
+            _teamPositioningController.TryGetDesiredPosition(
+                _teamMember,
+                out Vector3 tacticalTarget))
+        {
+            target = tacticalTarget;
+        }
+        else if (_teamPlayCoordinator != null &&
             _teamPlayCoordinator.TryGetPreparationTarget(_teamMember, out Vector3 teamTarget))
         {
             target = teamTarget;

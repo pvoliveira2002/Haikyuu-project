@@ -152,11 +152,21 @@ public sealed class SpikeSystem : MonoBehaviour
 
         Vector3 spikeVelocity = CalculateSpikeVelocity(ball);
 
+        BallTouchTracker touchTracker = ball.GetComponent<BallTouchTracker>();
+        if (touchTracker != null &&
+            !touchTracker.RegisterValidTouch(
+                CourtSide.Player,
+                _teamMember,
+                BallTouchAction.Spike))
+        {
+            _hasPendingInput = false;
+            _actionWindowOpened = false;
+            return;
+        }
+
         ball.ResetVelocity();
         float impulse = Mathf.Min(spikeVelocity.magnitude * ball.Mass, _spikeForce);
         ball.ApplyImpulse(spikeVelocity, impulse);
-        ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
-        _teamPlayCoordinator?.NotifyContact(_teamMember, TeamPlayAction.Attack);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Spike,
             ball.transform.position);

@@ -109,10 +109,20 @@ public sealed class SetSystem : MonoBehaviour
 
         Vector3 setVelocity = CalculateSetVelocity(ball);
 
+        BallTouchTracker touchTracker = ball.GetComponent<BallTouchTracker>();
+        if (touchTracker != null &&
+            !touchTracker.RegisterValidTouch(
+                CourtSide.Player,
+                _teamMember,
+                BallTouchAction.Set))
+        {
+            _bufferEndTime = float.NegativeInfinity;
+            _hasPendingInput = false;
+            return;
+        }
+
         ball.ResetVelocity();
         ball.ApplyImpulse(setVelocity, setVelocity.magnitude * ball.Mass);
-        ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
-        _teamPlayCoordinator?.NotifyContact(_teamMember, TeamPlayAction.Set);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Set,
             ball.transform.position);

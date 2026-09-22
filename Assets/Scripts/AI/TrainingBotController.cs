@@ -73,9 +73,18 @@ public sealed class TrainingBotController : MonoBehaviour
         Vector3 returnDirection = (
             horizontalDirection.normalized + Vector3.up * _verticalBias).normalized;
 
+        BallTouchTracker touchTracker = _ball.GetComponent<BallTouchTracker>();
+        if (touchTracker != null &&
+            !touchTracker.RegisterValidTouch(
+                CourtSide.Opponent,
+                null,
+                BallTouchAction.Other))
+        {
+            return;
+        }
+
         _ball.ResetVelocity();
         _ball.ApplyImpulse(returnDirection, _returnForce);
-        _ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Opponent);
         _nextReturnTime = Time.time + _returnCooldown;
     }
 }

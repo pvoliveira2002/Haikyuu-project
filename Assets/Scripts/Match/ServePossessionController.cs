@@ -7,6 +7,8 @@ public sealed class ServePossessionController : MonoBehaviour
     [SerializeField] private MatchSetManager _matchSetManager;
     [SerializeField] private VolleyballBall _ball;
     [SerializeField] private BallTouchTracker _touchTracker;
+    [SerializeField] private TeamMember _playerServer;
+    [SerializeField] private TeamMember _opponentServer;
     [SerializeField] private ServeSystem _playerServeSystem;
     [SerializeField] private Transform _playerServePoint;
     [SerializeField] private Transform _opponentServePoint;
@@ -66,7 +68,7 @@ public sealed class ServePossessionController : MonoBehaviour
     public void NotifyPlayerServed()
     {
         CanPlayerServe = false;
-        _touchTracker?.RegisterTouch(CourtSide.Player);
+        _touchTracker?.RegisterServe(CourtSide.Player, _playerServer);
     }
 
     private void HandleRallyEnded(CourtSide winner)
@@ -105,7 +107,7 @@ public sealed class ServePossessionController : MonoBehaviour
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.AIServe,
             _ball.transform.position);
-        _touchTracker?.RegisterTouch(CourtSide.Opponent);
+        _touchTracker?.RegisterServe(CourtSide.Opponent, _opponentServer);
         _opponentServeRoutine = null;
     }
 }

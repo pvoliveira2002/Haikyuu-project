@@ -15,6 +15,8 @@ public sealed class AIOpponentActions : MonoBehaviour
     [SerializeField] private TeamMember _teamMember;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
+    [SerializeField] private PlayerJump _jump;
+    [SerializeField] private BallTrajectoryPredictor _trajectoryPredictor;
     [SerializeField, Min(0f)] private float _receiveMinimumHeight = 0.25f;
     [SerializeField, Min(0f)] private float _receiveMaximumHeight = 2f;
     [SerializeField, Range(-1f, 1f)] private float _receiveMinimumForwardDot = -0.35f;
@@ -23,6 +25,11 @@ public sealed class AIOpponentActions : MonoBehaviour
     [SerializeField, Min(0f)] private float _attackForce = 2.1f;
     [SerializeField, Min(0f)] private float _attackVerticalBias = 0.35f;
     [SerializeField, Min(0f)] private float _attackDownwardBias = 0.05f;
+    [SerializeField, Min(0f)] private float _attackMinimumHeight = 1.6f;
+    [SerializeField, Min(0f)] private float _attackMaximumHeight = 3f;
+    [SerializeField, Min(0f)] private float _attackMaximumDistance = 1.5f;
+    [SerializeField, Min(0f)] private float _jumpPreparationDistance = 1.8f;
+    [SerializeField, Min(0f)] private float _jumpLeadTime = 0.75f;
     [SerializeField, Min(0f)] private float _netClearance = 0.6f;
     [SerializeField, Min(0f)] private float _contactCooldown = 0.35f;
     [SerializeField, Min(0f)] private float _targetVariation = 0.75f;
@@ -49,6 +56,18 @@ public sealed class AIOpponentActions : MonoBehaviour
     public bool IsAngleValid { get; private set; }
     public bool IsCooldownReady => Time.time >= _nextContactTime;
     public bool IsEmergencyFallbackActive { get; private set; }
+    public bool AttackReady { get; private set; }
+    public bool CanSpike { get; private set; }
+    public float BallHeight => _ball != null ? _ball.transform.position.y : 0f;
+    public Vector3 SpikeTarget { get; private set; }
+    public string LastAIAction { get; private set; } = "None";
+    public string AIRole => _teamPlayCoordinator != null &&
+        _teamPlayCoordinator.GetPlannedAction(_teamMember) == TeamPlayAction.Attack
+            ? "Attacker"
+            : _responsibilityResolver != null &&
+              _responsibilityResolver.IsResponsible(_teamMember)
+                ? "Responsible"
+                : "Support";
 
     private void Awake()
     {
@@ -67,6 +86,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             return;
         }
 
+        UpdateAttackPreparation();
         EvaluatePhysicalContact(out bool physicallyReachable, out bool sweptContact);
         if (physicallyReachable)
         {
@@ -161,6 +181,17 @@ public sealed class AIOpponentActions : MonoBehaviour
         TeamPlayAction plannedAction = _teamPlayCoordinator != null
             ? _teamPlayCoordinator.GetPlannedAction(_teamMember)
             : TeamPlayAction.None;
+        AttackReady = plannedAction == TeamPlayAction.Attack;
+        CanSpike = CanExecuteSpike(
+            physicallyReachable,
+            angleAccepted,
+            plannedAction);
+        if (CanSpike)
+        {
+            ExecuteAttack();
+            return;
+        }
+
         if (plannedAction == TeamPlayAction.Set &&
             physicallyReachable &&
             IsHeightValid &&
@@ -188,7 +219,7 @@ public sealed class AIOpponentActions : MonoBehaviour
         }
         else if (_decision.CurrentAction == AIAction.Attack)
         {
-            ExecuteAttack();
+            ExecuteReceive();
         }
         else if (defensiveBall)
         {
@@ -349,7 +380,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             plannedAction = TeamPlayAction.SafeReturn;
         }
 
-        ApplyBallAction(
+        bool applied = ApplyBallAction(
             direction,
             force,
             "AI Receive",
@@ -358,7 +389,14 @@ public sealed class AIOpponentActions : MonoBehaviour
             plannedAction == TeamPlayAction.Receive
                 ? TeamPlayAction.Receive
                 : TeamPlayAction.SafeReturn);
-        return true;
+        if (applied)
+        {
+            LastAIAction = plannedAction == TeamPlayAction.Receive
+                ? "Receive"
+                : "SafeReturn";
+        }
+
+        return applied;
     }
 
     private void ExecuteSet()
@@ -380,13 +418,16 @@ public sealed class AIOpponentActions : MonoBehaviour
             return;
         }
 
-        ApplyBallAction(
+        if (ApplyBallAction(
             launchVelocity.normalized,
             launchVelocity.magnitude * _ball.Mass,
             "AI Set",
             _currentContactTarget,
             1.1f,
-            TeamPlayAction.Set);
+            TeamPlayAction.Set))
+        {
+            LastAIAction = "Set";
+        }
     }
 
     private void ExecuteAttack()
@@ -404,13 +445,26 @@ public sealed class AIOpponentActions : MonoBehaviour
             _attackForce,
             out float adjustedForce);
 
-        ApplyBallAction(
+        if (ApplyBallAction(
             attackDirection,
             adjustedForce,
             "AI Attack",
             _currentContactTarget,
             -1f,
-            TeamPlayAction.Attack);
+            TeamPlayAction.Attack))
+        {
+            SpikeTarget = _currentContactTarget;
+            LastAIAction = "Spike";
+            Debug.Log(
+                $"AI ATTACK | Player={(_teamMember != null ? _teamMember.DisplayName : name)} | " +
+                $"CanSpike=true | BallHeight={BallHeight:F2} | " +
+                $"Distance={CurrentBallDistance:F2} | Target={SpikeTarget}",
+                this);
+            Debug.Log(
+                $"AI ACTION | Player={(_teamMember != null ? _teamMember.DisplayName : name)} | " +
+                "Action=Spike",
+                this);
+        }
     }
 
     private Vector3 GetHorizontalDirectionToTarget()
@@ -419,6 +473,75 @@ public sealed class AIOpponentActions : MonoBehaviour
         Vector3 direction = _currentContactTarget - _ball.transform.position;
         direction.y = 0f;
         return direction.normalized;
+    }
+
+    private void UpdateAttackPreparation()
+    {
+        TeamPlayAction plannedAction = _teamPlayCoordinator != null
+            ? _teamPlayCoordinator.GetPlannedAction(_teamMember)
+            : TeamPlayAction.None;
+        AttackReady = plannedAction == TeamPlayAction.Attack;
+        if (!_rallyActive ||
+            !AttackReady ||
+            _teamMember == null ||
+            _teamMember.IsHuman ||
+            _jump == null ||
+            !_jump.IsGrounded ||
+            _ball == null)
+        {
+            return;
+        }
+
+        Vector3 horizontalOffset = _ball.transform.position - transform.position;
+        horizontalOffset.y = 0f;
+        bool timingReady = _trajectoryPredictor == null ||
+            !_trajectoryPredictor.HasPrediction ||
+            _trajectoryPredictor.TimeToLanding <= _jumpLeadTime;
+        if (horizontalOffset.magnitude <= _jumpPreparationDistance &&
+            BallHeight >= _attackMinimumHeight &&
+            timingReady)
+        {
+            _jump.RequestJump();
+        }
+    }
+
+    private bool CanExecuteSpike(
+        bool physicallyReachable,
+        bool angleAccepted,
+        TeamPlayAction plannedAction)
+    {
+        if (!_rallyActive ||
+            plannedAction != TeamPlayAction.Attack ||
+            _teamMember == null ||
+            _teamMember.IsHuman ||
+            _jump == null ||
+            _jump.IsGrounded ||
+            !physicallyReachable ||
+            !angleAccepted ||
+            !IsCooldownReady ||
+            _contactConsumed ||
+            BallHeight < _attackMinimumHeight ||
+            BallHeight > _attackMaximumHeight)
+        {
+            return false;
+        }
+
+        Vector3 horizontalOffset = _ball.transform.position - transform.position;
+        horizontalOffset.y = 0f;
+        return horizontalOffset.magnitude <= _attackMaximumDistance &&
+               IsBallOnOwnSide();
+    }
+
+    private bool IsBallOnOwnSide()
+    {
+        if (_teamMember == null || _ball == null)
+        {
+            return false;
+        }
+
+        return _teamMember.TeamSide == CourtSide.Player
+            ? _ball.transform.position.z < 0f
+            : _ball.transform.position.z > 0f;
     }
 
     private void SelectContactTarget()
@@ -597,7 +720,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             horizontalDirection + Vector3.up * verticalComponent).normalized;
     }
 
-    private void ApplyBallAction(
+    private bool ApplyBallAction(
         Vector3 direction,
         float force,
         string actionName,
@@ -605,6 +728,25 @@ public sealed class AIOpponentActions : MonoBehaviour
         float intendedFlightTime,
         TeamPlayAction teamAction)
     {
+        CourtSide teamSide = _teamMember != null
+            ? _teamMember.TeamSide
+            : CourtSide.Opponent;
+        BallTouchAction touchAction = teamAction == TeamPlayAction.Receive
+            ? BallTouchAction.Receive
+            : teamAction == TeamPlayAction.Set
+                ? BallTouchAction.Set
+                : teamAction == TeamPlayAction.Attack
+                    ? BallTouchAction.Spike
+                    : BallTouchAction.Other;
+        if (_touchTracker != null &&
+            !_touchTracker.RegisterValidTouch(
+                teamSide,
+                _teamMember,
+                touchAction))
+        {
+            return false;
+        }
+
         _ball.ResetVelocity();
         _ball.ApplyImpulse(direction, force);
         ActionFeedbackController.PlayFeedback(
@@ -612,11 +754,6 @@ public sealed class AIOpponentActions : MonoBehaviour
                 ? ActionFeedbackType.AIAttack
                 : ActionFeedbackType.AIReceive,
             _ball.transform.position);
-        _touchTracker?.RegisterTouch(
-            _teamMember != null
-                ? _teamMember.TeamSide
-                : CourtSide.Opponent);
-        _teamPlayCoordinator?.NotifyContact(_teamMember, teamAction);
         _nextContactTime = Time.time + _contactCooldown;
         _contactConsumed = true;
         _rejectionLoggedForApproach = false;
@@ -645,6 +782,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             $"PredictedLanding: {intendedLanding} | TimeToLanding: {intendedFlightTime:F2} | " +
             $"PlayerDistanceToLanding: {playerDistance:F2} | " +
             $"EstimatedPlayerTravelTime: {playerTravelTime:F2} | Reachable: {reachable}");
+        return true;
     }
 
     private bool TryPredictLanding(
@@ -691,6 +829,8 @@ public sealed class AIOpponentActions : MonoBehaviour
     {
         _rallyActive = false;
         _contactConsumed = true;
+        AttackReady = false;
+        CanSpike = false;
     }
 
     private void HandleRallyReset()
@@ -702,6 +842,8 @@ public sealed class AIOpponentActions : MonoBehaviour
         _hasPreviousBallPosition = false;
         _rejectionLoggedForApproach = false;
         IsEmergencyFallbackActive = false;
+        AttackReady = false;
+        CanSpike = false;
     }
 
     private void OnDrawGizmosSelected()

@@ -10,6 +10,7 @@ public sealed class BlockSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _downwardBias = 0.2f;
     [SerializeField, Min(0f)] private float _blockWindow = 0.3f;
     [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = 0.3f;
+    [SerializeField] private TeamMember _teamMember;
 
     private bool _blockActive;
     private bool _hasBlockedBall;
@@ -67,8 +68,19 @@ public sealed class BlockSystem : MonoBehaviour
         Vector3 blockDirection =
             transform.forward + Vector3.down * _downwardBias;
 
+        BallTouchTracker touchTracker = ball.GetComponent<BallTouchTracker>();
+        if (touchTracker != null &&
+            !touchTracker.RegisterValidTouch(
+                CourtSide.Player,
+                _teamMember,
+                BallTouchAction.Block))
+        {
+            _hasBlockedBall = true;
+            _blockActive = false;
+            return;
+        }
+
         ball.ApplyImpulse(blockDirection, _blockForce);
-        ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Block,
             ball.transform.position);

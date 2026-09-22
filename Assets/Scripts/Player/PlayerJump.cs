@@ -8,6 +8,7 @@ public sealed class PlayerJump : MonoBehaviour
     [SerializeField, Min(1f)] private float _fallMultiplier = 1.3f;
     [SerializeField, Min(0f)] private float _coyoteTime = 0.08f;
     [SerializeField, Min(0f)] private float _jumpBufferTime = 0.1f;
+    [SerializeField] private bool _acceptPlayerInput = true;
 
     private CharacterController _characterController;
     private float _verticalVelocity;
@@ -38,7 +39,7 @@ public sealed class PlayerJump : MonoBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (_acceptPlayerInput && Input.GetKeyDown(KeyCode.Space))
         {
             _lastJumpPressedTime = Time.time;
         }
@@ -61,5 +62,10 @@ public sealed class PlayerJump : MonoBehaviour
             : _gravityMultiplier;
         _verticalVelocity += Physics.gravity.y * gravityScale * Time.deltaTime;
         _characterController.Move(Vector3.up * _verticalVelocity * Time.deltaTime);
+    }
+
+    public void RequestJump()
+    {
+        _lastJumpPressedTime = Time.time;
     }
 }

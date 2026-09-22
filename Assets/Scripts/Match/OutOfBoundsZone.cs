@@ -16,6 +16,8 @@ public sealed class OutOfBoundsZone : MonoBehaviour
             return;
         }
 
-        _rallyEndDetector.ReportBallOut(_touchTracker.LastTouch);
+        _rallyEndDetector.ReportBallOut(
+            _touchTracker.LastTouch,
+            _touchTracker.LastAction == BallTouchAction.Serve);
     }
 }

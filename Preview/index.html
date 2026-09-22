@@ -18,18 +18,20 @@
     let cameraFov=64,cameraYaw=0,cameraPitch=12,lastTime=performance.now(),minimumProjectedDepth=Infinity;
     const keys=new Set(),player={x:0,y:0,z:-6,vx:0,vz:0,verticalVelocity:0,facing:0,grounded:true,lastGroundedTime:0,jumpPressedTime:-Infinity};
     const ball={x:.8,y:.5,z:-2.5,vx:0,vy:0,vz:0,radius:.21,mass:.27,linearDamping:.08,maxSpeed:20};
-    const ai={x:0,y:0,z:6,vx:0,vz:0,facing:Math.PI,moveSpeed:5.5,acceleration:22,deceleration:20,positionTolerance:.3,urgentPositionTolerance:.4,positioningOffset:.8,predictionThreshold:.25,fastPredictionThreshold:.12,homeX:0,homeZ:6,targetX:0,targetZ:6,prediction:null,fastIncoming:false,currentAction:'Wait',pendingAction:'Wait',pendingAt:0,reactionTime:.18,fastReactionTime:.1,nextContact:0,contactRadius:1.2,emergencyRadius:.85,closeDistance:.65,ballInsideContact:false,contactConsumed:false,contactDistance:99,heightValid:false,angleValid:false,emergencyFallback:false,receiveMinHeight:.25,receiveMaxHeight:2,receiveDistance:1.2,attackMinHeight:1.6,attackMaxHeight:3,attackDistance:1,attackChance:.35,attackChoice:null,returnX:0,returnZ:-5.5,targetVariation:.75,netTop:2.1,netClearance:.6,receiveMinFlight:1.2,receiveMaxFlight:2,playerReactionAllowance:.2,safeMinX:-3,safeMaxX:3,safeMinZ:-7,safeMaxZ:-3.5,attackForce:2.1,attackVerticalBias:.35,attackDownwardBias:.05,contactCooldown:.35,lastContact:''};
+    const ai={x:0,y:0,z:6,vx:0,vz:0,verticalVelocity:0,grounded:true,facing:Math.PI,moveSpeed:5.5,acceleration:22,deceleration:20,positionTolerance:.3,urgentPositionTolerance:.4,positioningOffset:.8,predictionThreshold:.25,fastPredictionThreshold:.12,homeX:0,homeZ:6,targetX:0,targetZ:6,prediction:null,fastIncoming:false,currentAction:'Wait',pendingAction:'Wait',pendingAt:0,reactionTime:.18,fastReactionTime:.1,nextContact:0,contactRadius:1.2,emergencyRadius:.85,closeDistance:.65,ballInsideContact:false,contactConsumed:false,contactDistance:99,heightValid:false,angleValid:false,emergencyFallback:false,receiveMinHeight:.25,receiveMaxHeight:2,receiveDistance:1.2,attackMinHeight:1.6,attackMaxHeight:3,attackDistance:1.5,jumpPreparationDistance:1.8,jumpLeadTime:.75,attackReady:false,canSpike:false,spikeTarget:null,attackChance:.35,attackChoice:null,returnX:0,returnZ:-5.5,targetVariation:.75,netTop:2.1,netClearance:.6,receiveMinFlight:1.2,receiveMaxFlight:2,playerReactionAllowance:.2,safeMinX:-3,safeMaxX:3,safeMinZ:-7,safeMaxZ:-3.5,attackForce:2.1,attackVerticalBias:.35,attackDownwardBias:.05,contactCooldown:.35,lastContact:''};
     // PREVIEW-ONLY — APPROXIMATION OF UNITY GAMEPLAY (FASE 10 / 2x2).
     // The Unity TeamPlayCoordinator remains the authoritative implementation.
     Object.assign(player,{name:'Player',side:'Player',isHuman:true,homeX:-2.15,homeZ:-5.7});
     Object.assign(ai,{name:'AIOpponent',side:'Opponent',isHuman:false,x:-2.15,z:5.7,homeX:-2.15,homeZ:5.7,targetX:-2.15,targetZ:5.7});
-    function createPreviewAI(name,side,x,z){return{...ai,name,side,isHuman:false,x,z,homeX:x,homeZ:z,targetX:x,targetZ:z,vx:0,vz:0,facing:side==='Player'?0:Math.PI,prediction:null,currentAction:'Wait',pendingAction:'Wait',nextContact:0,contactConsumed:false,lastContact:''}}
+    function createPreviewAI(name,side,x,z){return{...ai,name,side,isHuman:false,x,y:0,z,homeX:x,homeZ:z,targetX:x,targetZ:z,vx:0,vz:0,verticalVelocity:0,grounded:true,facing:side==='Player'?0:Math.PI,prediction:null,currentAction:'Wait',pendingAction:'Wait',nextContact:0,contactConsumed:false,attackReady:false,canSpike:false,spikeTarget:null,lastContact:''}}
     const playerTeammate=createPreviewAI('PlayerTeammate','Player',2.15,-5.7);
     const ai2=createPreviewAI('AIOpponent2','Opponent',2.15,5.7);
     const playerTeam={label:'Player',members:[player,playerTeammate],state:'Defending',receiver:null,support:null,responsible:null,lastTouchBy:null,lastAction:'None',touches:0,nextAction:'Receive',setTarget:{x:1.2,y:1.15,z:-2.6},attackTarget:{x:-1.2,y:2.25,z:-1.65}};
     const opponentTeam={label:'Opponent',members:[ai,ai2],state:'Defending',receiver:null,support:null,responsible:null,lastTouchBy:null,lastAction:'None',touches:0,nextAction:'Receive',setTarget:{x:-1.2,y:1.15,z:2.6},attackTarget:{x:1.2,y:2.25,z:1.65}};
     const previewTeams=[playerTeam,opponentTeam],previewAgents=[playerTeammate,ai,ai2];
     let previewPrediction=null,previewPreviousBallZ=ball.z,ballOwnerSide='None',rallyState='Ready';
+    const previewRules={Player:{touches:0,lastPlayer:null,lastAction:'None'},Opponent:{touches:0,lastPlayer:null,lastAction:'None'}};
+    let previewLastTouchTeam='None',previewLastRallyReason='None',previewPointAwardedTo='None',previewFaultActive=false;
     const moveSpeed=5,runSpeed=8,acceleration=20,deceleration=25,rotationSpeed=12,airControl=.75;
     const jumpHeight=1.2,gravity=-9.81,gravityMultiplier=1.7,fallMultiplier=1.3,coyoteTime=.08,jumpBufferTime=.1,groundedVelocity=-2;
     const contactRadius=1.1,contactForward=.4,receiveForce=2.5,receiveUp=1.15,receiveForward=.65;
@@ -102,6 +104,15 @@
     // PREVIEW-ONLY — APPROXIMATION OF UNITY GAMEPLAY.
     // Simplified 2x2 responsibility and cooperation used only for browser visualization.
     let previewObservedTouches=0;
+    function resetPreviewRules(){for(const rules of Object.values(previewRules)){rules.touches=0;rules.lastPlayer=null;rules.lastAction='None'}previewLastTouchTeam='None';previewLastRallyReason='None';previewPointAwardedTo='None';previewFaultActive=false}
+    function registerPreviewRuleTouch(team,actor,action,isServe=false){
+      const side=team.label,rules=previewRules[side],other=previewRules[side==='Player'?'Opponent':'Player'];
+      if(isServe){rules.touches=0;other.touches=0;rules.lastPlayer=actor;rules.lastAction='Serve';previewLastTouchTeam=side;return true}
+      if(previewLastTouchTeam===side&&actor&&rules.lastPlayer===actor)return endPreviewFault(side,'DoubleContact');
+      const next=previewLastTouchTeam===side?rules.touches+1:1;if(next>3)return endPreviewFault(side,'FourTouches');
+      if(previewLastTouchTeam!==side)other.touches=0;rules.touches=next;rules.lastPlayer=actor;rules.lastAction=action;previewLastTouchTeam=side;console.log(`TOUCH | Team=${side} | Player=${previewName(actor)} | Action=${action} | Count=${next}`);return true;
+    }
+    function endPreviewFault(side,reason){previewFaultActive=true;rallyState='Ended';previewLastRallyReason=reason;previewPointAwardedTo=side==='Player'?'Opponent':'Player';ball.vx=ball.vy=ball.vz=0;console.log(`FAULT | Team=${side} | Reason=${reason} | Point=${previewPointAwardedTo}`);return false}
     function resetPreviewTeam(team){team.state='Defending';team.receiver=null;team.support=null;team.responsible=null;team.lastTouchBy=null;team.lastAction='None';team.touches=0;team.nextAction='Receive'}
     function actorDistance(actor,point){return Math.hypot(actor.x-point.x,actor.z-point.z)}
     function resolvePreviewReceiver(team,point){return team.members.reduce((best,actor)=>actorDistance(actor,point)<actorDistance(best,point)?actor:best,team.members[0])}
@@ -116,6 +127,9 @@
     function registerPreviewHumanAction(){
       if(previewObservedTouches===rallyTouches)return;
       previewObservedTouches=rallyTouches;
+      const actionMap={receive:'Receive',set:'Set',spike:'Spike',block:'Block'};
+      if(lastAction==='serve'){registerPreviewRuleTouch(playerTeam,player,'Serve',true);return}
+      if(actionMap[lastAction]&&!registerPreviewRuleTouch(playerTeam,player,actionMap[lastAction]))return;
       if(lastAction==='receive'&&(playerTeam.state==='Receiving'||playerTeam.state==='Defending')){playerTeam.receiver=player;playerTeam.support=playerTeammate;setBallVelocityForTarget(playerTeam.setTarget,1.05);advancePreviewTeam(playerTeam,'Receive',player)}
       else if(lastAction==='set'&&(playerTeam.state==='Receiving'||playerTeam.state==='Defending')){playerTeam.receiver=player;playerTeam.support=playerTeammate;advancePreviewTeam(playerTeam,'Set',player)}
       else if(lastAction==='set'&&playerTeam.state==='Preparing'&&playerTeam.responsible===player){setBallVelocityForTarget(playerTeam.attackTarget,1.05);advancePreviewTeam(playerTeam,'Set',player)}
@@ -126,13 +140,33 @@
       actor.vx=moveTowards(actor.vx,targetVx,rate*dt);actor.vz=moveTowards(actor.vz,targetVz,rate*dt);actor.x=clamp(actor.x+actor.vx*dt,-4,4);actor.z=clamp(actor.z+actor.vz*dt,actor.side==='Player'?-8.5:.5,actor.side==='Player'?-.5:8.5);actor.targetX=target.x;actor.targetZ=target.z;
       if(Math.hypot(actor.vx,actor.vz)>.01)actor.facing=lerpAngle(actor.facing,Math.atan2(actor.vx,actor.vz),1-Math.exp(-12*dt));
     }
+    function calculatePreviewPositioning(team){
+      const direction=team.label==='Player'?1:-1,opponent=team===playerTeam?opponentTeam:playerTeam;
+      team.members.forEach((actor,index)=>{let desired={x:actor.homeX+clamp(ball.x*.3,-1.25,1.25),z:actor.homeZ+direction*(index===0?.8:-.8)},role='Support';
+        if(team.responsible===actor){desired={x:actor.x,z:actor.z};role=team.state==='Attacking'?'Attacker':'Responsible'}
+        else if(team.state==='Receiving'&&team.support===actor)desired={x:team.setTarget.x,z:team.setTarget.z};
+        else if(team.state==='Preparing'&&team.receiver===actor)desired={x:team.attackTarget.x,z:team.attackTarget.z};
+        else if(team.state==='Attacking'&&team.support===actor){desired={x:team.attackTarget.x*.65,z:team.attackTarget.z-direction*1.4};role='Cover'}
+        if(opponent.state==='Attacking'&&index===1&&team.state==='Defending')desired.z-=direction*.75;
+        actor.previewDesired={x:clamp(desired.x,-4,4),z:clamp(desired.z,team.label==='Player'?-8.5:.5,team.label==='Player'?-.5:8.5)};actor.previewRole=role;
+      });
+      const first=team.members[0],second=team.members[1],distance=Math.hypot(second.previewDesired.x-first.previewDesired.x,second.previewDesired.z-first.previewDesired.z);
+      if(distance<1.75){const movable=team.responsible===first?second:first,anchor=movable===first?second:first,directionX=movable===first?-1:1;movable.previewDesired.x=clamp(anchor.previewDesired.x+directionX*1.75,-4,4)}
+    }
     function previewAgentTarget(actor,team){
       if(team.responsible===actor&&previewPrediction)return{x:clamp(previewPrediction.x,-3.8,3.8),z:clamp(previewPrediction.z,team.label==='Player'?-8.2:.7,team.label==='Player'?-.7:8.2)};
-      if(team.state==='Receiving'&&team.support===actor)return{x:team.setTarget.x,z:team.setTarget.z};
-      if(team.state==='Preparing'&&team.receiver===actor)return{x:team.attackTarget.x,z:team.attackTarget.z};
-      return{x:actor.homeX,z:actor.homeZ};
+      return actor.previewDesired||{x:actor.homeX,z:actor.homeZ};
     }
     function previewContactDistance(actor){return Math.hypot(ball.x-actor.x,ball.y-(actor.y+1.15),ball.z-actor.z)}
+    // PREVIEW-ONLY â€” simplified visual approximation of the Unity AI jump timing.
+    function updatePreviewAIJump(actor,team,dt){
+      actor.attackReady=team.responsible===actor&&team.nextAction==='Attack';actor.canSpike=false;
+      const horizontalDistance=Math.hypot(ball.x-actor.x,ball.z-actor.z),ownSide=actor.side==='Player'?ball.z<0:ball.z>0,timingReady=!previewPrediction||previewPrediction.time<=actor.jumpLeadTime;
+      if(actor.attackReady&&actor.grounded&&ownSide&&horizontalDistance<=actor.jumpPreparationDistance&&ball.y>=actor.attackMinHeight&&timingReady){actor.verticalVelocity=Math.sqrt(jumpHeight*-2*gravity*gravityMultiplier);actor.grounded=false}
+      actor.verticalVelocity+=gravity*gravityMultiplier*(actor.verticalVelocity<0?fallMultiplier:1)*dt;actor.y+=actor.verticalVelocity*dt;
+      if(actor.y<=0){actor.y=0;actor.verticalVelocity=groundedVelocity;actor.grounded=true}
+      actor.canSpike=actor.attackReady&&!actor.grounded&&ownSide&&horizontalDistance<=actor.attackDistance&&ball.y>=actor.attackMinHeight&&ball.y<=actor.attackMaxHeight&&previewContactDistance(actor)<=actor.contactRadius+ball.radius;
+    }
     function executePreviewContact(actor,team,time){
       const distance=previewContactDistance(actor),inside=distance<=actor.contactRadius+ball.radius;
       if(!inside){actor.contactConsumed=false;return}
@@ -140,19 +174,22 @@
       let action=team.nextAction;
       const assigned=team.responsible===actor;
       if(!assigned){const assignedDistance=team.responsible?previewContactDistance(team.responsible):0;if(!(assignedDistance>2.35&&ball.vy<0))return;action='Fallback'}
+      if(action==='Attack'&&!actor.canSpike){if(ball.vy<0&&ball.y<actor.attackMinHeight)action='Fallback';else return}
+      const rulesAction=action==='Attack'?'Spike':action==='Fallback'?'Other':action;if(!registerPreviewRuleTouch(team,actor,rulesAction)){actor.contactConsumed=true;return}
       if(action==='Receive')setBallVelocityForTarget(team.setTarget,1.05);
       else if(action==='Set')setBallVelocityForTarget(team.attackTarget,1.05);
       else{
-        const target={x:clamp(-ball.x*.35,-3.1,3.1),y:ball.radius,z:team.label==='Player'?5.3:-5.3};
+        const target={x:clamp(-ball.x*.35+(Math.random()-.5)*.7,-3.1,3.1),y:ball.radius,z:team.label==='Player'?5.3:-5.3};
+        if(action==='Attack')actor.spikeTarget={...target};
         setBallVelocityForTarget(target,action==='Fallback'?1.15:.82);
       }
       actor.contactConsumed=true;actor.nextContact=time+actor.contactCooldown;actor.lastContact=action;playFeedback(action==='Attack'?'aiAttack':'aiReceive',time);
       if(action==='Fallback'){team.touches=Math.min(3,team.touches+1);team.state='BallSent';team.responsible=null;team.nextAction='Defend';team.lastTouchBy=actor;team.lastAction=action;ballOwnerSide=team.label}
       else advancePreviewTeam(team,action,actor);
     }
-    function updatePreviewAgent(actor,team,dt,time){previewMoveActor(actor,previewAgentTarget(actor,team),dt);actor.prediction=previewPrediction;actor.currentAction=team.responsible===actor?team.nextAction:(team.support===actor?'Support':'ReturnHome');executePreviewContact(actor,team,time)}
+    function updatePreviewAgent(actor,team,dt,time){previewMoveActor(actor,previewAgentTarget(actor,team),dt);actor.prediction=previewPrediction;actor.currentAction=team.responsible===actor?team.nextAction:(team.support===actor?'Support':'ReturnHome');updatePreviewAIJump(actor,team,dt);executePreviewContact(actor,team,time)}
     function updateAI(dt,time){
-      registerPreviewHumanAction();previewPrediction=predictLanding();rallyState=Math.hypot(ball.vx,ball.vy,ball.vz)>.3?'Active':'Ready';
+      registerPreviewHumanAction();previewPrediction=predictLanding();if(!previewFaultActive)rallyState=Math.hypot(ball.vx,ball.vy,ball.vz)>.3?'Active':'Ready';
       const crossedToOpponent=previewPreviousBallZ<0&&ball.z>=0,crossedToPlayer=previewPreviousBallZ>0&&ball.z<=0;
       if(crossedToOpponent){resetPreviewTeam(opponentTeam);if(playerTeam.state==='BallSent')playerTeam.touches=0}
       if(crossedToPlayer){resetPreviewTeam(playerTeam);if(opponentTeam.state==='BallSent')opponentTeam.touches=0}
@@ -160,6 +197,7 @@
         if(previewPrediction.z<-.35)startPreviewSequence(playerTeam,previewPrediction);
         else if(previewPrediction.z>.35)startPreviewSequence(opponentTeam,previewPrediction);
       }
+      calculatePreviewPositioning(playerTeam);calculatePreviewPositioning(opponentTeam);
       updatePreviewAgent(playerTeammate,playerTeam,dt,time);updatePreviewAgent(ai,opponentTeam,dt,time);updatePreviewAgent(ai2,opponentTeam,dt,time);
       previewPreviousBallZ=ball.z;
       const responsible=opponentTeam.responsible||playerTeam.responsible;status.textContent=`2×2 · Responsável: ${responsible?responsible.name:'aguardando'} · ${ballOwnerSide}`;
@@ -189,14 +227,17 @@
     function drawAIDebug(){
       if(previewPrediction){const landing=project([previewPrediction.x,.03,previewPrediction.z]),current=project([ball.x,ball.y,ball.z]);if(landing&&current){ctx.strokeStyle='#4ade80aa';ctx.setLineDash([6,5]);ctx.beginPath();ctx.moveTo(current[0],current[1]);ctx.lineTo(landing[0],landing[1]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(landing[0],landing[1],8,0,Math.PI*2);ctx.strokeStyle='#4ade80';ctx.stroke()}}
       for(const team of previewTeams){for(const target of[team.setTarget,team.attackTarget]){const p=project([target.x,.04,target.z]);if(!p)continue;ctx.beginPath();ctx.arc(p[0],p[1],6,0,Math.PI*2);ctx.fillStyle=team.label==='Player'?'#22d3ee88':'#f59e0b88';ctx.fill()}}
+      for(const team of previewTeams)for(const actor of team.members){if(!actor.previewDesired)continue;const p=project([actor.previewDesired.x,.05,actor.previewDesired.z]);if(!p)continue;ctx.strokeStyle=team.label==='Player'?'#67e8f9':'#fdba74';ctx.strokeRect(p[0]-5,p[1]-5,10,10)}
     }
     function previewName(actor){return actor?actor.name:'—'}
+    function previewPositionLine(actor,team){const desired=actor.previewDesired||{x:actor.homeX,z:actor.homeZ},mate=team.members.find(member=>member!==actor),spacing=mate?Math.hypot(actor.x-mate.x,actor.z-mate.z):0,spikeDebug=actor.isHuman?'':`\n${previewSpikeLine(actor)}`;return`${actor.name}: Role ${actor.previewRole||'Support'} | Home (${actor.homeX.toFixed(1)},${actor.homeZ.toFixed(1)}) | Desired (${desired.x.toFixed(1)},${desired.z.toFixed(1)}) | DistanceToTeammate ${spacing.toFixed(1)}${spikeDebug}`}
+    function previewSpikeLine(actor){const target=actor.spikeTarget?`(${actor.spikeTarget.x.toFixed(1)},${actor.spikeTarget.z.toFixed(1)})`:'N/A';return`${actor.name} SPIKE | AttackReady ${actor.attackReady} | CanSpike ${actor.canSpike} | Airborne ${!actor.grounded} | BallHeight ${ball.y.toFixed(2)} | Distance ${previewContactDistance(actor).toFixed(2)} | Target ${target} | Last ${actor.lastContact||'None'}`}
     function updateDebugHUD(){
       const responsible=opponentTeam.responsible||playerTeam.responsible;status.textContent=`2×2 · Responsável: ${previewName(responsible)} · Bola: ${ballOwnerSide}`;
       if(!debugVisible)return;const ballSpeed=Math.hypot(ball.vx,ball.vy,ball.vz),landing=previewPrediction?`(${previewPrediction.x.toFixed(1)}, ${previewPrediction.z.toFixed(1)}) / ${previewPrediction.time.toFixed(2)}s`:'N/A';
-      debug.textContent=`PLAYTEST 2×2 — PREVIEW-ONLY (F1 ocultar)\n\nPLAYER TEAM\nState: ${playerTeam.state}\nReceiver: ${previewName(playerTeam.receiver)}\nSetter: ${previewName(playerTeam.support)}\nAttacker: ${previewName(playerTeam.receiver)}\nTouches: ${playerTeam.touches}\nNextResponsible: ${previewName(playerTeam.responsible)}\nLastTouchBy: ${previewName(playerTeam.lastTouchBy)}\nLastAction: ${playerTeam.lastAction}\nNext Action: ${playerTeam.nextAction}\n\nOPPONENT TEAM\nState: ${opponentTeam.state}\nReceiver: ${previewName(opponentTeam.receiver)}\nSetter: ${previewName(opponentTeam.support)}\nAttacker: ${previewName(opponentTeam.receiver)}\nTouches: ${opponentTeam.touches}\nNextResponsible: ${previewName(opponentTeam.responsible)}\nLastTouchBy: ${previewName(opponentTeam.lastTouchBy)}\nLastAction: ${opponentTeam.lastAction}\nNext Action: ${opponentTeam.nextAction}\n\nBall Owner/Side: ${ballOwnerSide}\nPredicted Landing: ${landing}\nRally State: ${rallyState}\nBall Speed: ${ballSpeed.toFixed(1)} m/s\nLast Action: ${lastAction}\nRally Touches: ${rallyTouches} · Longest: ${longestRally}`;
+      debug.textContent=`PLAYTEST 2×2 — PREVIEW-ONLY (F1 ocultar)\n\nRULES\nPlayer Team: Touches ${previewRules.Player.touches}/3 | Last Player ${previewName(previewRules.Player.lastPlayer)} | Last Action ${previewRules.Player.lastAction}\nOpponent Team: Touches ${previewRules.Opponent.touches}/3 | Last Player ${previewName(previewRules.Opponent.lastPlayer)} | Last Action ${previewRules.Opponent.lastAction}\nLast Touch Team: ${previewLastTouchTeam} | Last Rally Reason: ${previewLastRallyReason} | Point Awarded To: ${previewPointAwardedTo}\n\nPLAYER TEAM\nState: ${playerTeam.state}\nReceiver: ${previewName(playerTeam.receiver)}\nSetter: ${previewName(playerTeam.support)}\nAttacker: ${previewName(playerTeam.receiver)}\nTouches: ${playerTeam.touches}\nNextResponsible: ${previewName(playerTeam.responsible)}\nLastTouchBy: ${previewName(playerTeam.lastTouchBy)}\nLastAction: ${playerTeam.lastAction}\nNext Action: ${playerTeam.nextAction}\n${previewPositionLine(player,playerTeam)}\n${previewPositionLine(playerTeammate,playerTeam)}\n\nOPPONENT TEAM\nState: ${opponentTeam.state}\nReceiver: ${previewName(opponentTeam.receiver)}\nSetter: ${previewName(opponentTeam.support)}\nAttacker: ${previewName(opponentTeam.receiver)}\nTouches: ${opponentTeam.touches}\nNextResponsible: ${previewName(opponentTeam.responsible)}\nLastTouchBy: ${previewName(opponentTeam.lastTouchBy)}\nLastAction: ${opponentTeam.lastAction}\nNext Action: ${opponentTeam.nextAction}\n${previewPositionLine(ai,opponentTeam)}\n${previewPositionLine(ai2,opponentTeam)}\n\nBall Owner/Side: ${ballOwnerSide}\nPredicted Landing: ${landing}\nRally State: ${rallyState}\nBall Speed: ${ballSpeed.toFixed(1)} m/s\nLast Action: ${lastAction}\nRally Touches: ${rallyTouches} · Longest: ${longestRally}`;
     }
-    function resetPreviewPlay(){for(const team of previewTeams)resetPreviewTeam(team);ballOwnerSide='None';rallyState='Ready';previewObservedTouches=rallyTouches;previewPreviousBallZ=ball.z}
+    function resetPreviewPlay(){for(const team of previewTeams)resetPreviewTeam(team);resetPreviewRules();ballOwnerSide='None';rallyState='Ready';previewObservedTouches=rallyTouches;previewPreviousBallZ=ball.z}
     canvas.addEventListener('click',()=>canvas.requestPointerLock());addEventListener('mousemove',e=>{if(document.pointerLockElement!==canvas)return;cameraYaw+=e.movementX*.004;cameraPitch=clamp(cameraPitch-e.movementY*.24,-10,45)});addEventListener('keydown',e=>{if(['KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight','Space','KeyE','KeyQ','KeyF','KeyG','KeyC','Digit1','Digit2','KeyR','F1'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.repeat)return;if(e.code==='F1'){debugVisible=!debugVisible;debug.hidden=!debugVisible}else if(e.code==='Space')player.jumpPressedTime=performance.now()/1000;else if(e.code==='KeyE')actionPressed.receive=true;else if(e.code==='KeyQ'){setBufferUntil=performance.now()/1000+setInputBuffer;setPending=true;setValidation={inside:false,height:false,angle:false};actionPressed.set=true}else if(e.code==='KeyF')actionPressed.spike=true;else if(e.code==='KeyG')serveBall(performance.now()/1000);else if(e.code==='KeyC')actionPressed.block=true;else if(e.code==='Digit1')prepareSetTest();else if(e.code==='Digit2')prepareSpikeTest();else if(e.code==='KeyR'){resetBall();rallyTouches=0;resetPreviewPlay()}});addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
     requestAnimationFrame(draw);
   </script>

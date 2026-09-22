@@ -176,6 +176,8 @@ GameObject:
   - component: {fileID: 2211}
   - component: {fileID: 2212}
   - component: {fileID: 2213}
+  - component: {fileID: 2214}
+  - component: {fileID: 2215}
   m_Layer: 0
   m_Name: Court
   m_TagString: Untagged
@@ -258,6 +260,8 @@ MonoBehaviour:
   _matchSetManager: {fileID: 204}
   _ball: {fileID: 516}
   _touchTracker: {fileID: 517}
+  _playerServer: {fileID: 540}
+  _opponentServer: {fileID: 2107}
   _playerServeSystem: {fileID: 536}
   _playerServePoint: {fileID: 931}
   _opponentServePoint: {fileID: 981}
@@ -349,6 +353,8 @@ MonoBehaviour:
   _responsibilityResolver: {fileID: 2211}
   _playerTeamCoordinator: {fileID: 2212}
   _opponentTeamCoordinator: {fileID: 2213}
+  _playerTeamPositioning: {fileID: 2214}
+  _opponentTeamPositioning: {fileID: 2215}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -1622,6 +1628,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ad84454ae9846be8a662f6c11da623f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _rallyEndDetector: {fileID: 202}
+  _playerTeamCoordinator: {fileID: 2212}
+  _opponentTeamCoordinator: {fileID: 2213}
 --- !u!114 &518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1812,6 +1821,7 @@ MonoBehaviour:
   _fallMultiplier: 1.3
   _coyoteTime: 0.08
   _jumpBufferTime: 0.1
+  _acceptPlayerInput: 1
 --- !u!114 &528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2896,6 +2906,7 @@ MonoBehaviour:
   _downwardBias: 0.2
   _blockWindow: 0.3
   _minimumForwardDot: 0.3
+  _teamMember: {fileID: 540}
 --- !u!1 &980
 GameObject:
   m_ObjectHideFlags: 0
@@ -3454,6 +3465,8 @@ GameObject:
   - component: {fileID: 2105}
   - component: {fileID: 2106}
   - component: {fileID: 2107}
+  - component: {fileID: 2108}
+  - component: {fileID: 2109}
   m_Layer: 0
   m_Name: AIOpponent
   m_TagString: Untagged
@@ -3583,6 +3596,7 @@ MonoBehaviour:
   _teamMember: {fileID: 2107}
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2213}
+  _teamPositioningController: {fileID: 2215}
 --- !u!114 &2106
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3630,6 +3644,49 @@ MonoBehaviour:
   _playerIndex: 0
   _isHuman: 0
   _homePosition: {fileID: 2111}
+--- !u!143 &2108
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d9bf042f58b4e13990cd4fa6328c8ba, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _jumpHeight: 1.2
+  _gravityMultiplier: 1.7
+  _fallMultiplier: 1.3
+  _coyoteTime: 0.08
+  _jumpBufferTime: 0.1
+  _acceptPlayerInput: 0
 --- !u!1 &2110
 GameObject:
   m_ObjectHideFlags: 0
@@ -3768,6 +3825,13 @@ MonoBehaviour:
   _touchTracker: {fileID: 517}
   _controller: {fileID: 2105}
   _teamMember: {fileID: 2107}
+  _jump: {fileID: 2109}
+  _trajectoryPredictor: {fileID: 2104}
+  _attackMinimumHeight: 1.6
+  _attackMaximumHeight: 3
+  _attackMaximumDistance: 1.5
+  _jumpPreparationDistance: 1.8
+  _jumpLeadTime: 0.75
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2213}
   _receiveMinimumHeight: 0.25
@@ -4143,6 +4207,62 @@ MonoBehaviour:
   _ball: {fileID: 516}
   _teamSetTarget: {fileID: 3261}
   _attackReadyPosition: {fileID: 3271}
+--- !u!114 &2214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a7c1e29d6434fd6b173a0725e2b91c4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 0
+  _teamMembers:
+  - {fileID: 540}
+  - {fileID: 3006}
+  _ball: {fileID: 516}
+  _teamPlayCoordinator: {fileID: 2212}
+  _opponentTeamCoordinator: {fileID: 2213}
+  _responsibilityResolver: {fileID: 2211}
+  _movementBounds: {fileID: 2210}
+  _teamSetTarget: {fileID: 3241}
+  _attackReadyPosition: {fileID: 3251}
+  _minimumTeammateSpacing: 1.75
+  _ballSideShift: 0.3
+  _defensiveDepthOffset: 0.8
+  _attackDefenseDepth: 0.75
+  _coverageDepth: 1.4
+--- !u!114 &2215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a7c1e29d6434fd6b173a0725e2b91c4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 1
+  _teamMembers:
+  - {fileID: 2107}
+  - {fileID: 3106}
+  _ball: {fileID: 516}
+  _teamPlayCoordinator: {fileID: 2213}
+  _opponentTeamCoordinator: {fileID: 2212}
+  _responsibilityResolver: {fileID: 2211}
+  _movementBounds: {fileID: 2210}
+  _teamSetTarget: {fileID: 3261}
+  _attackReadyPosition: {fileID: 3271}
+  _minimumTeammateSpacing: 1.75
+  _ballSideShift: 0.3
+  _defensiveDepthOffset: 0.8
+  _attackDefenseDepth: 0.75
+  _coverageDepth: 1.4
 --- !u!1 &2220
 GameObject:
   m_ObjectHideFlags: 0
@@ -4264,6 +4384,8 @@ GameObject:
   - component: {fileID: 3004}
   - component: {fileID: 3005}
   - component: {fileID: 3006}
+  - component: {fileID: 3007}
+  - component: {fileID: 3008}
   m_Layer: 0
   m_Name: PlayerTeammate
   m_TagString: Untagged
@@ -4366,6 +4488,7 @@ MonoBehaviour:
   _teamMember: {fileID: 3006}
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2212}
+  _teamPositioningController: {fileID: 2214}
   _moveSpeed: 5.5
   _acceleration: 22
   _deceleration: 20
@@ -4421,6 +4544,49 @@ MonoBehaviour:
   _playerIndex: 1
   _isHuman: 0
   _homePosition: {fileID: 3211}
+--- !u!143 &3007
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d9bf042f58b4e13990cd4fa6328c8ba, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _jumpHeight: 1.2
+  _gravityMultiplier: 1.7
+  _fallMultiplier: 1.3
+  _coyoteTime: 0.08
+  _jumpBufferTime: 0.1
+  _acceptPlayerInput: 0
 --- !u!1 &3010
 GameObject:
   m_ObjectHideFlags: 0
@@ -4497,6 +4663,8 @@ MonoBehaviour:
   _touchTracker: {fileID: 517}
   _controller: {fileID: 3004}
   _teamMember: {fileID: 3006}
+  _jump: {fileID: 3008}
+  _trajectoryPredictor: {fileID: 2104}
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2212}
   _receiveMinimumHeight: 0.25
@@ -4507,6 +4675,11 @@ MonoBehaviour:
   _attackForce: 2.1
   _attackVerticalBias: 0.35
   _attackDownwardBias: 0.05
+  _attackMinimumHeight: 1.6
+  _attackMaximumHeight: 3
+  _attackMaximumDistance: 1.5
+  _jumpPreparationDistance: 1.8
+  _jumpLeadTime: 0.75
   _netClearance: 0.6
   _contactCooldown: 0.35
   _targetVariation: 0.75
@@ -4531,6 +4704,8 @@ GameObject:
   - component: {fileID: 3104}
   - component: {fileID: 3105}
   - component: {fileID: 3106}
+  - component: {fileID: 3107}
+  - component: {fileID: 3108}
   m_Layer: 0
   m_Name: AIOpponent2
   m_TagString: Untagged
@@ -4633,6 +4808,7 @@ MonoBehaviour:
   _teamMember: {fileID: 3106}
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2213}
+  _teamPositioningController: {fileID: 2215}
   _moveSpeed: 5.5
   _acceleration: 22
   _deceleration: 20
@@ -4688,6 +4864,49 @@ MonoBehaviour:
   _playerIndex: 1
   _isHuman: 0
   _homePosition: {fileID: 3221}
+--- !u!143 &3107
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d9bf042f58b4e13990cd4fa6328c8ba, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _jumpHeight: 1.2
+  _gravityMultiplier: 1.7
+  _fallMultiplier: 1.3
+  _coyoteTime: 0.08
+  _jumpBufferTime: 0.1
+  _acceptPlayerInput: 0
 --- !u!1 &3110
 GameObject:
   m_ObjectHideFlags: 0
@@ -4764,6 +4983,13 @@ MonoBehaviour:
   _touchTracker: {fileID: 517}
   _controller: {fileID: 3104}
   _teamMember: {fileID: 3106}
+  _jump: {fileID: 3108}
+  _trajectoryPredictor: {fileID: 2104}
+  _attackMinimumHeight: 1.6
+  _attackMaximumHeight: 3
+  _attackMaximumDistance: 1.5
+  _jumpPreparationDistance: 1.8
+  _jumpLeadTime: 0.75
   _responsibilityResolver: {fileID: 2211}
   _teamPlayCoordinator: {fileID: 2213}
   _receiveMinimumHeight: 0.25

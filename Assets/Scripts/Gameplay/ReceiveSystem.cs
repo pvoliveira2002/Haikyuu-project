@@ -90,16 +90,20 @@ public sealed class ReceiveSystem : MonoBehaviour
                 _controlledFlightTime);
         }
 
+        BallTouchTracker touchTracker = ball.GetComponent<BallTouchTracker>();
+        if (touchTracker != null &&
+            !touchTracker.RegisterValidTouch(
+                CourtSide.Player,
+                _teamMember,
+                BallTouchAction.Receive))
+        {
+            return;
+        }
+
         ball.ResetVelocity();
         ball.ApplyImpulse(
             launchVelocity.normalized,
             launchVelocity.magnitude * ball.Mass);
-        ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
-        _teamPlayCoordinator?.NotifyContact(
-            _teamMember,
-            coordinatedReceive
-                ? TeamPlayAction.Receive
-                : TeamPlayAction.SafeReturn);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Receive,
             ball.transform.position);

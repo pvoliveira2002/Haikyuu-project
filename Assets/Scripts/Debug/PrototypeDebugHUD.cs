@@ -25,6 +25,8 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField] private TeamPlayCoordinator _playerTeamCoordinator;
     [SerializeField] private TeamPlayCoordinator _opponentTeamCoordinator;
+    [SerializeField] private TeamPositioningController _playerTeamPositioning;
+    [SerializeField] private TeamPositioningController _opponentTeamPositioning;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -64,6 +66,15 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Last {_playtestMonitor.LastAction}\n" +
             $"Ball | Speed {_ball.Velocity.magnitude:F1}  Height {_ball.transform.position.y:F1}  " +
             $"Last Touch {lastTouch}\n" +
+            $"RULES | Player Touches {_touchTracker.PlayerTeamTouches}/3  " +
+            $"Last Player {DescribeTouchPlayer(CourtSide.Player)}  " +
+            $"Last Action {DescribeTouchAction(CourtSide.Player)}\n" +
+            $"RULES | Opponent Touches {_touchTracker.OpponentTeamTouches}/3  " +
+            $"Last Player {DescribeTouchPlayer(CourtSide.Opponent)}  " +
+            $"Last Action {DescribeTouchAction(CourtSide.Opponent)}\n" +
+            $"RULES | Last Touch Team {lastTouch}  " +
+            $"Last Rally Reason {_rallyEndDetector.EndReason}  " +
+            $"Point Awarded To {(_rallyEndDetector.IsRallyEnded ? _rallyEndDetector.Winner.ToString() : "None")}\n" +
             $"AI | {_aiDecision.CurrentAction}  Distance {aiDistance:F1}  " +
             $"Landing {timeToLanding}  Reach {_aiController.CanReachCurrentTarget}  " +
             $"Reaction {_aiReactionTime:F2}s\n" +
@@ -82,6 +93,12 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Cooldown {_aiActions.IsCooldownReady}  " +
             $"Decision {_aiDecision.CurrentAction}  " +
             $"Emergency Fallback {_aiActions.IsEmergencyFallbackActive}\n" +
+            $"AI SPIKE | Role {_aiActions.AIRole}  State {_aiDecision.CurrentAction}  " +
+            $"AttackReady {_aiActions.AttackReady}  CanSpike {_aiActions.CanSpike}  " +
+            $"BallHeight {_aiActions.BallHeight:F2}  " +
+            $"DistanceToBall {_aiActions.CurrentBallDistance:F2}\n" +
+            $"SpikeTarget {_aiActions.SpikeTarget:F2}  " +
+            $"LastAIAction {_aiActions.LastAIAction}\n" +
             $"Rally | Touches {_playtestMonitor.RallyTouches}  " +
             $"Longest {_playtestMonitor.LongestRally}  End {_playtestMonitor.LastRallyEndReason}\n" +
             $"CAMERA | Yaw {_cameraController.Yaw:F1}  Pitch {_cameraController.Pitch:F1}  " +
@@ -107,10 +124,12 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"VerticalVelocity {_playerAnimatedVisual.AnimationVerticalVelocity:F2}\n" +
             $"PLAYER TEAM | {DescribeResponsible(CourtSide.Player)}\n" +
             $"{DescribeTeamPlay(_playerTeamCoordinator)}\n" +
+            $"{DescribePositioning(_playerTeamPositioning)}\n" +
             $"OPPONENT TEAM | {DescribeResponsible(CourtSide.Opponent)}\n" +
-            $"{DescribeTeamPlay(_opponentTeamCoordinator)}";
+            $"{DescribeTeamPlay(_opponentTeamCoordinator)}\n" +
+            $"{DescribePositioning(_opponentTeamPositioning)}";
 
-        GUI.Box(new Rect(12f, 12f, 950f, 470f), text);
+        GUI.Box(new Rect(12f, 12f, 950f, 625f), text);
     }
 
     private bool HasRequiredReferences()
@@ -136,7 +155,9 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _playerAnimatedVisual != null &&
                _responsibilityResolver != null &&
                _playerTeamCoordinator != null &&
-               _opponentTeamCoordinator != null;
+               _opponentTeamCoordinator != null &&
+               _playerTeamPositioning != null &&
+               _opponentTeamPositioning != null;
     }
 
     private string DescribeResponsible(CourtSide side)
@@ -152,6 +173,19 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             : "None";
         return $"Responsible {member.DisplayName}  Home {home}  " +
                $"{(member.IsHuman ? "Human" : "AI")}";
+    }
+
+    private string DescribeTouchPlayer(CourtSide side)
+    {
+        TeamMember player = _touchTracker.GetLastPlayer(side);
+        return player != null
+            ? player.DisplayName
+            : "None";
+    }
+
+    private string DescribeTouchAction(CourtSide side)
+    {
+        return _touchTracker.GetLastAction(side).ToString();
     }
 
     private static string DescribeTeamPlay(TeamPlayCoordinator coordinator)
@@ -176,5 +210,32 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                $"Touches {coordinator.TeamTouchCount}\n" +
                $"NextResponsible {nextResponsible}  LastPlayer {lastTouchBy}  " +
                $"LastAction {coordinator.LastAction}  Next {coordinator.NextAction}";
+    }
+
+    private static string DescribePositioning(
+        TeamPositioningController positioning)
+    {
+        TeamMember first = positioning.GetMember(0);
+        TeamMember second = positioning.GetMember(1);
+        return $"Positioning | {DescribeMemberPosition(positioning, first)} | " +
+               DescribeMemberPosition(positioning, second);
+    }
+
+    private static string DescribeMemberPosition(
+        TeamPositioningController positioning,
+        TeamMember member)
+    {
+        if (member == null ||
+            !positioning.TryGetDesiredPosition(member, out Vector3 desired))
+        {
+            return "None";
+        }
+
+        string home = member.HomePosition != null
+            ? member.HomePosition.position.ToString("F1")
+            : "None";
+        return $"{member.DisplayName} Role {positioning.GetRole(member)} " +
+               $"Home {home} Desired {desired:F1} " +
+               $"Spacing {positioning.GetDistanceToTeammate(member):F1}";
     }
 }

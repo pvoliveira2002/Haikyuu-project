@@ -197,3 +197,17 @@ Format: `Data | sistema | valor anterior → valor novo | motivo`
 2026-09-21 | AI Defense Reach | position tolerance normal 0.30 m -> normal 0.30 m / urgent 0.40 m; reachability margin 1.10; receive distance 1.10 m -> 1.20 m | Playtest mostrou resposta defensiva excessivamente lenta contra Spike.
 
 2026-09-21 | AI Receive Contact | sphere radius 1.05 m / offset (0, 0.6, 0.9) -> radius 1.20 m / offset (0, 0.8, 0.25); receive angle sem validacao fisica -> -0.35; height sem validacao fisica -> 0.25-2.0 m; emergency radius 0.85 m; close distance 0.65 m | Playtest mostrou falha de contato da IA mesmo com bola fisicamente proxima.
+
+## TEAM RULES
+
+- MaxTouches = 3
+- DoubleContact = enabled
+- ServeCountsAsTeamTouch = false
+- BlockTouchRule = block touch currently counts toward the 3-touch limit
+- NetFault = not implemented; no reliable detector exists yet
+- CenterLineFault = movement bounds only
+
+Simplifications:
+
+- Block contact uses the same touch and double-contact rules as other actions.
+- Net contact, antenna, foot fault and official block-touch exceptions are deferred.
