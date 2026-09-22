@@ -1,70 +1,42 @@
-using System.Collections;
 using UnityEngine;
 
 public sealed class PlayerAnimatedVisual : MonoBehaviour
 {
-    [SerializeField] private GameObject _modelPrefab;
-    [SerializeField] private AnimationClip _defaultAnimation;
+    [SerializeField] private GameObject _model;
     [SerializeField] private RuntimeAnimatorController _animatorController;
+    [SerializeField] private Transform _visualRoot;
     [SerializeField] private GameObject _staticFallback;
-    [SerializeField] private Vector3 _localPosition = new Vector3(0f, -1f, 0f);
-    [SerializeField] private Vector3 _localEulerAngles;
-    [SerializeField] private Vector3 _localScale = Vector3.one;
     [SerializeField] private float _speedSmoothing = 12f;
     [SerializeField] private float _idleThreshold = 0.15f;
     [SerializeField] private float _runThreshold = 6.5f;
-    [SerializeField] private float _verticalThreshold = 0.1f;
-    [SerializeField] private float _runToStopDuration = 0.3f;
-    [SerializeField] private float _landingDuration = 0.25f;
 
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
     private static readonly int VerticalVelocityHash = Animator.StringToHash("VerticalVelocity");
-    private static readonly int IsStoppingHash = Animator.StringToHash("IsStopping");
 
     private CharacterController _characterController;
     private Animator _animator;
     private float _smoothedSpeed;
-    private float _previousSpeed;
     private float _previousHeight;
-    private float _stateEndTime;
-    private float _lastRunTime = float.NegativeInfinity;
-    private bool _wasGrounded;
-    private VisualState _state;
 
-    public string CurrentAnimationState => GetDisplayState();
+    public string CurrentAnimationState => GetCurrentAnimationState();
     public float AnimationSpeed => _smoothedSpeed;
     public bool AnimationGrounded { get; private set; }
     public float AnimationVerticalVelocity { get; private set; }
-
-    private enum VisualState
-    {
-        Locomotion,
-        RunToStop,
-        Jump,
-        Fall,
-        Land
-    }
 
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
         _previousHeight = transform.position.y;
-        _wasGrounded = _characterController != null && _characterController.isGrounded;
+        AnimationGrounded = _characterController != null && _characterController.isGrounded;
 
-        if (_modelPrefab == null)
+        if (_model == null || _visualRoot == null || !_model.transform.IsChildOf(_visualRoot))
         {
             SetFallbackActive(true);
             return;
         }
 
-        GameObject model = Instantiate(_modelPrefab, transform);
-        model.name = "KageyamaAnimatedVisual";
-        model.transform.localPosition = _localPosition;
-        model.transform.localRotation = Quaternion.Euler(_localEulerAngles);
-        model.transform.localScale = _localScale;
-
-        _animator = model.GetComponentInChildren<Animator>();
+        _animator = _model.GetComponentInChildren<Animator>(true);
         if (_animator != null)
         {
             _animator.enabled = true;
@@ -75,15 +47,17 @@ public sealed class PlayerAnimatedVisual : MonoBehaviour
 
             if (_animatorController != null)
             {
+                _animator.Rebind();
+                _animator.SetLayerWeight(0, 1f);
+                _animator.SetFloat(SpeedHash, 0f);
                 _animator.Play("Locomotion", 0, 0f);
                 _animator.Update(0f);
             }
 
-            StartCoroutine(ValidateBoneMovement(_animator));
         }
 
         SetFallbackActive(false);
-        LogAnimationSetup(_animator, model);
+        LogAnimationSetup(_animator, _model);
     }
 
     private void Update()
@@ -105,85 +79,34 @@ public sealed class PlayerAnimatedVisual : MonoBehaviour
             ? (transform.position.y - _previousHeight) / Time.deltaTime
             : 0f;
 
-        bool landedThisFrame = !_wasGrounded && AnimationGrounded;
-        if (horizontalSpeed >= _runThreshold)
-        {
-            _lastRunTime = Time.time;
-        }
-
-        bool stoppedFromRun = AnimationGrounded &&
-                              Time.time - _lastRunTime <= 0.5f &&
-                              _previousSpeed > _idleThreshold &&
-                              horizontalSpeed <= _idleThreshold;
-        bool movementResumed = horizontalSpeed > _idleThreshold;
-
         _animator.SetFloat(SpeedHash, _smoothedSpeed);
         _animator.SetBool(IsGroundedHash, AnimationGrounded);
         _animator.SetFloat(VerticalVelocityHash, AnimationVerticalVelocity);
-        _animator.SetBool(IsStoppingHash, stoppedFromRun);
 
-        UpdateVisualState(landedThisFrame, stoppedFromRun, movementResumed);
-
-        _previousSpeed = horizontalSpeed;
         _previousHeight = transform.position.y;
-        _wasGrounded = AnimationGrounded;
     }
 
-    private void UpdateVisualState(bool landedThisFrame, bool stoppedFromRun, bool movementResumed)
+    private string GetCurrentAnimationState()
     {
-        if (!AnimationGrounded)
+        if (_animator == null)
         {
-            SetState(AnimationVerticalVelocity > _verticalThreshold
-                ? VisualState.Jump
-                : VisualState.Fall, 0.05f);
-            return;
+            return "None";
         }
 
-        if (landedThisFrame)
+        AnimatorStateInfo state = _animator.GetCurrentAnimatorStateInfo(0);
+        if (state.IsName("Jump"))
         {
-            SetTimedState(VisualState.Land, _landingDuration, 0.05f);
-            return;
+            return "Jump";
         }
 
-        if ((_state == VisualState.Land || _state == VisualState.RunToStop) &&
-            Time.time < _stateEndTime &&
-            !movementResumed)
+        if (state.IsName("Fall"))
         {
-            return;
+            return "Fall";
         }
 
-        if (stoppedFromRun)
+        if (state.IsName("Land"))
         {
-            _lastRunTime = float.NegativeInfinity;
-            SetTimedState(VisualState.RunToStop, _runToStopDuration, 0.05f);
-            return;
-        }
-
-        SetState(VisualState.Locomotion, 0.08f);
-    }
-
-    private void SetTimedState(VisualState state, float duration, float transitionDuration)
-    {
-        SetState(state, transitionDuration);
-        _stateEndTime = Time.time + duration;
-    }
-
-    private void SetState(VisualState state, float transitionDuration)
-    {
-        if (_state == state)
-        {
-            return;
-        }
-
-        _state = state;
-        _animator.CrossFade(state.ToString(), transitionDuration, 0);
-    }
-
-    private string GetDisplayState()
-    {
-        if (_state != VisualState.Locomotion)
-        {
-            return _state.ToString();
+            return "Land";
         }
 
         if (_smoothedSpeed <= _idleThreshold)
@@ -192,22 +115,6 @@ public sealed class PlayerAnimatedVisual : MonoBehaviour
         }
 
         return _smoothedSpeed < _runThreshold ? "Walk" : "Run";
-    }
-
-    private IEnumerator ValidateBoneMovement(Animator animator)
-    {
-        Transform testBone = animator != null && animator.isHuman
-            ? animator.GetBoneTransform(HumanBodyBones.LeftUpperArm)
-            : null;
-        Quaternion initialRotation = testBone != null
-            ? testBone.localRotation
-            : Quaternion.identity;
-
-        yield return new WaitForSeconds(0.1f);
-
-        bool boneChanged = testBone != null &&
-            Quaternion.Angle(initialRotation, testBone.localRotation) > 0.1f;
-        Debug.Log($"PLAYER ANIMATION DEBUG | Bone: LeftUpperArm | Changed: {boneChanged}");
     }
 
     private void LogAnimationSetup(Animator animator, GameObject model)
@@ -225,8 +132,6 @@ public sealed class PlayerAnimatedVisual : MonoBehaviour
         string controllerName = animator != null && animator.runtimeAnimatorController != null
             ? animator.runtimeAnimatorController.name
             : "null";
-        string clipName = _defaultAnimation != null ? _defaultAnimation.name : "null";
-
         Debug.Log(
             "PLAYER ANIMATION DEBUG\n" +
             $"Animator found: {animator != null}\n" +
@@ -235,7 +140,6 @@ public sealed class PlayerAnimatedVisual : MonoBehaviour
             $"Animator speed: {(animator != null ? animator.speed : 0f)}\n" +
             $"Avatar: {avatarStatus}\n" +
             $"Controller: {controllerName}\n" +
-            $"Current clip: {clipName}\n" +
             "State: Locomotion\n" +
             $"Static fallback active: {(_staticFallback != null && _staticFallback.activeSelf)}\n" +
             $"Animated renderer active: {animatedRendererActive}");

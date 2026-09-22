@@ -675,6 +675,20 @@ Ajustar:
 - sensação de impacto;
 - controles.
 
+Polimento visual e de sensação previsto:
+
+- efeitos de impacto nos contatos com a bola;
+- som da bola;
+- som de passos;
+- som da rede;
+- pequenas vibrações de câmera;
+- trail da bola;
+- feedback visual e sonoro de ação válida;
+- animação de vitória e derrota do ponto;
+- melhoria da iluminação da quadra.
+
+Esses elementos devem reforçar a leitura e a sensação do gameplay sem alterar o balanceamento já validado.
+
 ---
 
 ## FASE 9 — EQUIPES
@@ -691,6 +705,25 @@ Migrar progressivamente:
 
 Não saltar diretamente para IA 6x6.
 
+Primeira etapa — 2x2:
+
+- responsabilidade pela bola;
+- jogador de apoio;
+- recepção direcionada para o companheiro;
+- levantamento;
+- ataque em equipe;
+- posicionamento ofensivo;
+- posicionamento defensivo;
+- retorno dos jogadores às posições base.
+
+Progressão obrigatória:
+
+1. estabilizar o 2x2;
+2. migrar e validar o 4x4;
+3. somente depois iniciar o 6x6.
+
+Cada formato deve estar funcional antes da expansão para o próximo.
+
 ---
 
 ## FASE 10 — IA TÁTICA
@@ -698,11 +731,32 @@ Não saltar diretamente para IA 6x6.
 Adicionar:
 
 - posições;
-- cobertura;
-- levantador;
-- atacantes;
-- bloqueadores;
-- formação.
+- cobertura de espaço;
+- seleção de quem recebe;
+- seleção de quem levanta;
+- seleção de quem ataca;
+- organização de bloqueio;
+- retorno à formação;
+- decisões específicas por posição;
+- níveis de dificuldade da IA.
+
+Fluxo esperado da IA de equipe:
+
+Bola
+↓
+Previsão da trajetória
+↓
+Escolha do responsável
+↓
+Recepção
+↓
+Levantamento
+↓
+Ataque
+↓
+Cobertura ou retorno à formação
+
+A dificuldade deve modificar tempos de reação, precisão e qualidade das decisões sem permitir movimentos ou alcances fisicamente impossíveis.
 
 ---
 
