@@ -173,6 +173,7 @@ GameObject:
   - component: {fileID: 208}
   - component: {fileID: 209}
   - component: {fileID: 2210}
+  - component: {fileID: 2211}
   m_Layer: 0
   m_Name: Court
   m_TagString: Untagged
@@ -343,6 +344,7 @@ MonoBehaviour:
   _spikeSystem: {fileID: 534}
   _movementBounds: {fileID: 2210}
   _playerAnimatedVisual: {fileID: 537}
+  _responsibilityResolver: {fileID: 2211}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -1432,6 +1434,12 @@ Transform:
   - {fileID: 2111}
   - {fileID: 2121}
   - {fileID: 2191}
+  - {fileID: 3001}
+  - {fileID: 3101}
+  - {fileID: 3201}
+  - {fileID: 3211}
+  - {fileID: 3221}
+  - {fileID: 3231}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &510
@@ -1644,6 +1652,7 @@ GameObject:
   - component: {fileID: 537}
   - component: {fileID: 538}
   - component: {fileID: 539}
+  - component: {fileID: 540}
   m_Layer: 0
   m_Name: Player 1 - Kageyama
   m_TagString: Untagged
@@ -1660,7 +1669,7 @@ Transform:
   m_GameObject: {fileID: 520}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -6}
+  m_LocalPosition: {x: -2.2, y: 1, z: -5.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1998,6 +2007,22 @@ MonoBehaviour:
   _speedSmoothing: 12
   _idleThreshold: 0.15
   _runThreshold: 6.5
+--- !u!114 &540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38eab4bb776b47c0ae0864d4d87baf01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 0
+  _playerIndex: 0
+  _isHuman: 1
+  _homePosition: {fileID: 3201}
 --- !u!114 &538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2244,7 +2269,7 @@ Transform:
   m_GameObject: {fileID: 700}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 0, y: 1, z: 6}
+  m_LocalPosition: {x: -2.2, y: 1, z: 5.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3414,6 +3439,7 @@ GameObject:
   - component: {fileID: 2104}
   - component: {fileID: 2105}
   - component: {fileID: 2106}
+  - component: {fileID: 2107}
   m_Layer: 0
   m_Name: AIOpponent
   m_TagString: Untagged
@@ -3540,6 +3566,8 @@ MonoBehaviour:
   _reachabilityMargin: 1.1
   _positioningOffset: 0.8
   _courtPadding: 0.5
+  _teamMember: {fileID: 2107}
+  _responsibilityResolver: {fileID: 2211}
 --- !u!114 &2106
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3557,6 +3585,9 @@ MonoBehaviour:
   _rallyEndDetector: {fileID: 202}
   _matchSetManager: {fileID: 204}
   _allowedCourtArea: {fileID: 224}
+  _movementBounds: {fileID: 2210}
+  _teamMember: {fileID: 2107}
+  _responsibilityResolver: {fileID: 2211}
   _receiveMinHeight: 0.3
   _receiveMaxHeight: 1.9
   _receiveDistance: 1.2
@@ -3567,6 +3598,22 @@ MonoBehaviour:
   _reactionTime: 0.18
   _fastBallReactionTime: 0.1
   _currentAction: 1
+--- !u!114 &2107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38eab4bb776b47c0ae0864d4d87baf01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 1
+  _playerIndex: 0
+  _isHuman: 0
+  _homePosition: {fileID: 2111}
 --- !u!1 &2110
 GameObject:
   m_ObjectHideFlags: 0
@@ -3577,7 +3624,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2111}
   m_Layer: 0
-  m_Name: AIOpponentHome
+  m_Name: OpponentHomeLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3592,7 +3639,7 @@ Transform:
   m_GameObject: {fileID: 2110}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 6}
+  m_LocalPosition: {x: -2.2, y: 1, z: 5.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3704,6 +3751,8 @@ MonoBehaviour:
   _netTopReference: {fileID: 2141}
   _touchTracker: {fileID: 517}
   _controller: {fileID: 2105}
+  _teamMember: {fileID: 2107}
+  _responsibilityResolver: {fileID: 2211}
   _receiveMinimumHeight: 0.25
   _receiveMaximumHeight: 2
   _receiveMinimumForwardDot: -0.35
@@ -4013,6 +4062,28 @@ MonoBehaviour:
   _horizontalLimits: {x: -4.25, y: 4.25}
   _playerDepthLimits: {x: -8.5, y: -0.35}
   _opponentDepthLimits: {x: 0.35, y: 8.5}
+--- !u!114 &2211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a4f0c7bb52644c8961920d42d6f9402, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _trajectoryPredictor: {fileID: 2104}
+  _rallyEndDetector: {fileID: 202}
+  _movementBounds: {fileID: 2210}
+  _playerTeam:
+  - {fileID: 540}
+  - {fileID: 3006}
+  _opponentTeam:
+  - {fileID: 2107}
+  - {fileID: 3106}
+  _responsibilitySwitchMargin: 0.5
 --- !u!1 &2220
 GameObject:
   m_ObjectHideFlags: 0
@@ -4120,6 +4191,658 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 94c5200c95b13214b8326f46b8a3e7b7, type: 3}
   m_PrefabInstance: {fileID: 836540324}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3001}
+  - component: {fileID: 3002}
+  - component: {fileID: 3003}
+  - component: {fileID: 3004}
+  - component: {fileID: 3005}
+  - component: {fileID: 3006}
+  m_Layer: 0
+  m_Name: PlayerTeammate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.2, y: 1, z: -5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3011}
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3002
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &3003
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1006}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c708c8df43946ee925f0b0831673090, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _trajectoryPredictor: {fileID: 2104}
+  _decision: {fileID: 3005}
+  _rallyEndDetector: {fileID: 202}
+  _homePosition: {fileID: 3211}
+  _allowedCourtArea: {fileID: 214}
+  _movementBounds: {fileID: 2210}
+  _courtSide: 0
+  _teamMember: {fileID: 3006}
+  _responsibilityResolver: {fileID: 2211}
+  _moveSpeed: 5.5
+  _acceleration: 22
+  _deceleration: 20
+  _positionTolerance: 0.3
+  _urgentPositionTolerance: 0.4
+  _reachabilityMargin: 1.1
+  _positioningOffset: 0.8
+  _courtPadding: 0.5
+--- !u!114 &3005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185b45a2777d47a5bd06a0884c7e819e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _ball: {fileID: 516}
+  _trajectoryPredictor: {fileID: 2104}
+  _rallyEndDetector: {fileID: 202}
+  _matchSetManager: {fileID: 204}
+  _allowedCourtArea: {fileID: 214}
+  _movementBounds: {fileID: 2210}
+  _teamMember: {fileID: 3006}
+  _responsibilityResolver: {fileID: 2211}
+  _receiveMinHeight: 0.3
+  _receiveMaxHeight: 1.9
+  _receiveDistance: 1.2
+  _attackMinHeight: 1.6
+  _attackMaxHeight: 3
+  _attackDistance: 1
+  _attackChance: 0.35
+  _reactionTime: 0.18
+  _fastBallReactionTime: 0.1
+  _currentAction: 1
+--- !u!114 &3006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38eab4bb776b47c0ae0864d4d87baf01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 0
+  _playerIndex: 1
+  _isHuman: 0
+  _homePosition: {fileID: 3211}
+--- !u!1 &3010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3011}
+  - component: {fileID: 3012}
+  - component: {fileID: 3013}
+  m_Layer: 0
+  m_Name: AIContactZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.8, z: 0.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &3012
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3010}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.2
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b418a40fab840cbb43f828595e55bf3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _decision: {fileID: 3005}
+  _rallyEndDetector: {fileID: 202}
+  _ball: {fileID: 516}
+  _contactZone: {fileID: 3012}
+  _returnTarget: {fileID: 3231}
+  _player: {fileID: 2101}
+  _netTopReference: {fileID: 2141}
+  _touchTracker: {fileID: 517}
+  _controller: {fileID: 3004}
+  _teamMember: {fileID: 3006}
+  _responsibilityResolver: {fileID: 2211}
+  _receiveMinimumHeight: 0.25
+  _receiveMaximumHeight: 2
+  _receiveMinimumForwardDot: -0.35
+  _emergencyContactRadius: 0.85
+  _emergencyCloseDistance: 0.65
+  _attackForce: 2.1
+  _attackVerticalBias: 0.35
+  _attackDownwardBias: 0.05
+  _netClearance: 0.6
+  _contactCooldown: 0.35
+  _targetVariation: 0.75
+  _safeReturnX: {x: -3, y: 3}
+  _safeReturnZ: {x: 3.5, y: 7}
+  _minimumReceiveFlightTime: 1.2
+  _maximumReceiveFlightTime: 2
+  _playerMoveSpeed: 5
+  _playerReactionAllowance: 0.2
+  _landingHeight: 0.21
+--- !u!1 &3100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3101}
+  - component: {fileID: 3102}
+  - component: {fileID: 3103}
+  - component: {fileID: 3104}
+  - component: {fileID: 3105}
+  - component: {fileID: 3106}
+  m_Layer: 0
+  m_Name: AIOpponent2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 2.2, y: 1, z: 5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3111}
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!33 &3102
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &3103
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 1002}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c708c8df43946ee925f0b0831673090, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _trajectoryPredictor: {fileID: 2104}
+  _decision: {fileID: 3105}
+  _rallyEndDetector: {fileID: 202}
+  _homePosition: {fileID: 3221}
+  _allowedCourtArea: {fileID: 224}
+  _movementBounds: {fileID: 2210}
+  _courtSide: 1
+  _teamMember: {fileID: 3106}
+  _responsibilityResolver: {fileID: 2211}
+  _moveSpeed: 5.5
+  _acceleration: 22
+  _deceleration: 20
+  _positionTolerance: 0.3
+  _urgentPositionTolerance: 0.4
+  _reachabilityMargin: 1.1
+  _positioningOffset: 0.8
+  _courtPadding: 0.5
+--- !u!114 &3105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185b45a2777d47a5bd06a0884c7e819e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _ball: {fileID: 516}
+  _trajectoryPredictor: {fileID: 2104}
+  _rallyEndDetector: {fileID: 202}
+  _matchSetManager: {fileID: 204}
+  _allowedCourtArea: {fileID: 224}
+  _movementBounds: {fileID: 2210}
+  _teamMember: {fileID: 3106}
+  _responsibilityResolver: {fileID: 2211}
+  _receiveMinHeight: 0.3
+  _receiveMaxHeight: 1.9
+  _receiveDistance: 1.2
+  _attackMinHeight: 1.6
+  _attackMaxHeight: 3
+  _attackDistance: 1
+  _attackChance: 0.35
+  _reactionTime: 0.18
+  _fastBallReactionTime: 0.1
+  _currentAction: 1
+--- !u!114 &3106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38eab4bb776b47c0ae0864d4d87baf01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 1
+  _playerIndex: 1
+  _isHuman: 0
+  _homePosition: {fileID: 3221}
+--- !u!1 &3110
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3111}
+  - component: {fileID: 3112}
+  - component: {fileID: 3113}
+  m_Layer: 0
+  m_Name: AIContactZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3111
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3110}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.8, z: 0.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3101}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &3112
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3110}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.2
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b418a40fab840cbb43f828595e55bf3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _decision: {fileID: 3105}
+  _rallyEndDetector: {fileID: 202}
+  _ball: {fileID: 516}
+  _contactZone: {fileID: 3112}
+  _returnTarget: {fileID: 2121}
+  _player: {fileID: 521}
+  _netTopReference: {fileID: 2141}
+  _touchTracker: {fileID: 517}
+  _controller: {fileID: 3104}
+  _teamMember: {fileID: 3106}
+  _responsibilityResolver: {fileID: 2211}
+  _receiveMinimumHeight: 0.25
+  _receiveMaximumHeight: 2
+  _receiveMinimumForwardDot: -0.35
+  _emergencyContactRadius: 0.85
+  _emergencyCloseDistance: 0.65
+  _attackForce: 2.1
+  _attackVerticalBias: 0.35
+  _attackDownwardBias: 0.05
+  _netClearance: 0.6
+  _contactCooldown: 0.35
+  _targetVariation: 0.75
+  _safeReturnX: {x: -3, y: 3}
+  _safeReturnZ: {x: -7, y: -3.5}
+  _minimumReceiveFlightTime: 1.2
+  _maximumReceiveFlightTime: 2
+  _playerMoveSpeed: 5
+  _playerReactionAllowance: 0.2
+  _landingHeight: 0.21
+--- !u!1 &3200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3201}
+  m_Layer: 0
+  m_Name: PlayerHomeLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3200}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.2, y: 1, z: -5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3210
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3211}
+  m_Layer: 0
+  m_Name: PlayerHomeRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3211
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3210}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.2, y: 1, z: -5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3220
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3221}
+  m_Layer: 0
+  m_Name: OpponentHomeRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3221
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3220}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.2, y: 1, z: 5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3230
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3231}
+  m_Layer: 0
+  m_Name: PlayerTeamReturnTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3231
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3230}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

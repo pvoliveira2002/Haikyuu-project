@@ -9,6 +9,8 @@ public sealed class AIOpponentController : MonoBehaviour
     [SerializeField] private Collider _allowedCourtArea;
     [SerializeField] private CourtMovementBounds _movementBounds;
     [SerializeField] private CourtSide _courtSide = CourtSide.Opponent;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField, Min(0f)] private float _moveSpeed = 5.5f;
     [SerializeField, Min(0f)] private float _acceleration = 22f;
     [SerializeField, Min(0f)] private float _deceleration = 20f;
@@ -31,7 +33,8 @@ public sealed class AIOpponentController : MonoBehaviour
     private void Update()
     {
         if (_trajectoryPredictor == null ||
-            _homePosition == null ||
+            (_homePosition == null &&
+             (_teamMember == null || _teamMember.HomePosition == null)) ||
             _allowedCourtArea == null)
         {
             return;
@@ -46,15 +49,19 @@ public sealed class AIOpponentController : MonoBehaviour
 
     private Vector3 ChooseMovementTarget()
     {
-        Vector3 target = _homePosition.position;
+        Transform home = _teamMember != null && _teamMember.HomePosition != null
+            ? _teamMember.HomePosition
+            : _homePosition;
+        Vector3 target = home.position;
 
-        if (ShouldUsePredictedPosition() &&
+        if (IsResponsibleForBall() &&
+            ShouldUsePredictedPosition() &&
             (_rallyEndDetector == null || !_rallyEndDetector.IsRallyEnded) &&
             _trajectoryPredictor.HasPrediction &&
             IsInsideAllowedArea(_trajectoryPredictor.PredictedLandingPoint))
         {
             Vector3 landingPoint = _trajectoryPredictor.PredictedLandingPoint;
-            Vector3 preparationDirection = _homePosition.position - landingPoint;
+            Vector3 preparationDirection = home.position - landingPoint;
             preparationDirection.y = 0f;
 
             if (preparationDirection.sqrMagnitude > 0f)
@@ -69,6 +76,13 @@ public sealed class AIOpponentController : MonoBehaviour
         }
 
         return ClampToAllowedArea(target);
+    }
+
+    private bool IsResponsibleForBall()
+    {
+        return _teamMember == null ||
+               _responsibilityResolver == null ||
+               _responsibilityResolver.IsResponsible(_teamMember);
     }
 
     private bool ShouldUsePredictedPosition()
@@ -175,22 +189,24 @@ public sealed class AIOpponentController : MonoBehaviour
 
     private bool IsInsideAllowedArea(Vector3 point)
     {
+        CourtSide side = _teamMember != null ? _teamMember.TeamSide : _courtSide;
         Bounds bounds = _allowedCourtArea.bounds;
         bool insideLegacyArea = point.x >= bounds.min.x && point.x <= bounds.max.x &&
             point.z >= bounds.min.z && point.z <= bounds.max.z;
         return insideLegacyArea &&
-            (_movementBounds == null || _movementBounds.Contains(point, _courtSide));
+            (_movementBounds == null || _movementBounds.Contains(point, side));
     }
 
     private Vector3 ClampToAllowedArea(Vector3 point)
     {
+        CourtSide side = _teamMember != null ? _teamMember.TeamSide : _courtSide;
         Bounds bounds = _allowedCourtArea.bounds;
         Vector3 clamped = new Vector3(
             Mathf.Clamp(point.x, bounds.min.x + _courtPadding, bounds.max.x - _courtPadding),
             transform.position.y,
             Mathf.Clamp(point.z, bounds.min.z + _courtPadding, bounds.max.z - _courtPadding));
         return _movementBounds != null
-            ? _movementBounds.ClampPosition(clamped, _courtSide)
+            ? _movementBounds.ClampPosition(clamped, side)
             : clamped;
     }
 
@@ -199,10 +215,13 @@ public sealed class AIOpponentController : MonoBehaviour
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(_movementTarget, 0.3f);
 
-        if (_homePosition != null)
+        Transform home = _teamMember != null && _teamMember.HomePosition != null
+            ? _teamMember.HomePosition
+            : _homePosition;
+        if (home != null)
         {
             Gizmos.color = Color.white;
-            Gizmos.DrawWireSphere(_homePosition.position, 0.35f);
+            Gizmos.DrawWireSphere(home.position, 0.35f);
         }
     }
 }

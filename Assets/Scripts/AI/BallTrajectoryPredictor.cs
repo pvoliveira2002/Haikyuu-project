@@ -60,10 +60,8 @@ public sealed class BallTrajectoryPredictor : MonoBehaviour
             landingHeight,
             position.z + velocity.z * landingTime);
 
-        IsFastIncomingBall = velocity.z > 0f &&
-            velocity.magnitude >= _incomingSpeedThreshold &&
-            landingTime <= _urgentLandingTime &&
-            newLandingPoint.z > 0f;
+        IsFastIncomingBall = velocity.magnitude >= _incomingSpeedThreshold &&
+            landingTime <= _urgentLandingTime;
         float updateThreshold = IsFastIncomingBall
             ? _fastPredictionUpdateThreshold
             : _predictionUpdateThreshold;

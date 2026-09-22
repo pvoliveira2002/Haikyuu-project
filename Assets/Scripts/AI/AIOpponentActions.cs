@@ -12,6 +12,8 @@ public sealed class AIOpponentActions : MonoBehaviour
     [SerializeField] private Transform _netTopReference;
     [SerializeField] private BallTouchTracker _touchTracker;
     [SerializeField] private AIOpponentController _controller;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField, Min(0f)] private float _receiveMinimumHeight = 0.25f;
     [SerializeField, Min(0f)] private float _receiveMaximumHeight = 2f;
     [SerializeField, Range(-1f, 1f)] private float _receiveMinimumForwardDot = -0.35f;
@@ -140,6 +142,13 @@ public sealed class AIOpponentActions : MonoBehaviour
             return;
         }
 
+        if (_teamMember != null &&
+            _responsibilityResolver != null &&
+            !_responsibilityResolver.IsResponsible(_teamMember))
+        {
+            return;
+        }
+
         bool defensiveBall = IsDefensiveBall();
         bool physicallyReachable = _ballInsideContactZone ||
             IsEmergencyFallbackActive || sweptContact;
@@ -222,7 +231,12 @@ public sealed class AIOpponentActions : MonoBehaviour
 
     private bool IsDefensiveBall()
     {
-        return _ball.Velocity.z > 0f || _ball.transform.position.z >= 0f;
+        CourtSide side = _teamMember != null
+            ? _teamMember.TeamSide
+            : CourtSide.Opponent;
+        return side == CourtSide.Player
+            ? _ball.Velocity.z < 0f || _ball.transform.position.z <= 0f
+            : _ball.Velocity.z > 0f || _ball.transform.position.z >= 0f;
     }
 
     private void LogRejectedOnce(string reason)
@@ -517,7 +531,10 @@ public sealed class AIOpponentActions : MonoBehaviour
                 ? ActionFeedbackType.AIAttack
                 : ActionFeedbackType.AIReceive,
             _ball.transform.position);
-        _touchTracker?.RegisterTouch(CourtSide.Opponent);
+        _touchTracker?.RegisterTouch(
+            _teamMember != null
+                ? _teamMember.TeamSide
+                : CourtSide.Opponent);
         _nextContactTime = Time.time + _contactCooldown;
         _contactConsumed = true;
         _rejectionLoggedForApproach = false;

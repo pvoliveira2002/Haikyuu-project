@@ -22,6 +22,7 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private SpikeSystem _spikeSystem;
     [SerializeField] private CourtMovementBounds _movementBounds;
     [SerializeField] private PlayerAnimatedVisual _playerAnimatedVisual;
+    [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -101,9 +102,11 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"ANIMATION | State {_playerAnimatedVisual.CurrentAnimationState}  " +
             $"Speed {_playerAnimatedVisual.AnimationSpeed:F2}  " +
             $"Grounded {_playerAnimatedVisual.AnimationGrounded}  " +
-            $"VerticalVelocity {_playerAnimatedVisual.AnimationVerticalVelocity:F2}";
+            $"VerticalVelocity {_playerAnimatedVisual.AnimationVerticalVelocity:F2}\n" +
+            $"PLAYER TEAM | {DescribeResponsible(CourtSide.Player)}\n" +
+            $"OPPONENT TEAM | {DescribeResponsible(CourtSide.Opponent)}";
 
-        GUI.Box(new Rect(12f, 12f, 950f, 395f), text);
+        GUI.Box(new Rect(12f, 12f, 950f, 430f), text);
     }
 
     private bool HasRequiredReferences()
@@ -126,6 +129,22 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _setSystem != null &&
                _spikeSystem != null &&
                _movementBounds != null &&
-               _playerAnimatedVisual != null;
+               _playerAnimatedVisual != null &&
+               _responsibilityResolver != null;
+    }
+
+    private string DescribeResponsible(CourtSide side)
+    {
+        TeamMember member = _responsibilityResolver.GetResponsible(side);
+        if (member == null)
+        {
+            return "Responsible None";
+        }
+
+        string home = member.HomePosition != null
+            ? member.HomePosition.name
+            : "None";
+        return $"Responsible {member.DisplayName}  Home {home}  " +
+               $"{(member.IsHuman ? "Human" : "AI")}";
     }
 }

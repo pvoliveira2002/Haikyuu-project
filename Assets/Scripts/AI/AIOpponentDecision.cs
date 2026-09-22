@@ -18,6 +18,9 @@ public sealed class AIOpponentDecision : MonoBehaviour
     [SerializeField] private RallyEndDetector _rallyEndDetector;
     [SerializeField] private MatchSetManager _matchSetManager;
     [SerializeField] private Collider _allowedCourtArea;
+    [SerializeField] private CourtMovementBounds _movementBounds;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
     [SerializeField, Min(0f)] private float _receiveMinHeight = 0.3f;
     [SerializeField, Min(0f)] private float _receiveMaxHeight = 1.9f;
     [SerializeField, Min(0f)] private float _receiveDistance = 1.2f;
@@ -94,6 +97,13 @@ public sealed class AIOpponentDecision : MonoBehaviour
             return AIAction.Wait;
         }
 
+        if (_teamMember != null &&
+            _responsibilityResolver != null &&
+            !_responsibilityResolver.IsResponsible(_teamMember))
+        {
+            return AIAction.ReturnHome;
+        }
+
         if (_ball == null ||
             _trajectoryPredictor == null ||
             _allowedCourtArea == null ||
@@ -161,8 +171,12 @@ public sealed class AIOpponentDecision : MonoBehaviour
     private bool IsInsideAllowedArea(Vector3 point)
     {
         Bounds bounds = _allowedCourtArea.bounds;
-        return point.x >= bounds.min.x && point.x <= bounds.max.x &&
-               point.z >= bounds.min.z && point.z <= bounds.max.z;
+        bool insideCourt = point.x >= bounds.min.x && point.x <= bounds.max.x &&
+            point.z >= bounds.min.z && point.z <= bounds.max.z;
+        return insideCourt &&
+            (_movementBounds == null ||
+             _teamMember == null ||
+             _movementBounds.Contains(point, _teamMember.TeamSide));
     }
 
     private static bool IsWithinHeight(float height, float minimum, float maximum)
