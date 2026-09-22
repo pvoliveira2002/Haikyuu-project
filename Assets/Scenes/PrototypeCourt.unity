@@ -174,6 +174,8 @@ GameObject:
   - component: {fileID: 209}
   - component: {fileID: 2210}
   - component: {fileID: 2211}
+  - component: {fileID: 2212}
+  - component: {fileID: 2213}
   m_Layer: 0
   m_Name: Court
   m_TagString: Untagged
@@ -345,6 +347,8 @@ MonoBehaviour:
   _movementBounds: {fileID: 2210}
   _playerAnimatedVisual: {fileID: 537}
   _responsibilityResolver: {fileID: 2211}
+  _playerTeamCoordinator: {fileID: 2212}
+  _opponentTeamCoordinator: {fileID: 2213}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -1440,6 +1444,10 @@ Transform:
   - {fileID: 3211}
   - {fileID: 3221}
   - {fileID: 3231}
+  - {fileID: 3241}
+  - {fileID: 3251}
+  - {fileID: 3261}
+  - {fileID: 3271}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &510
@@ -1827,6 +1835,8 @@ MonoBehaviour:
   _minimumContactHeight: 0.3
   _maximumContactHeight: 1.7
   _minimumForwardDot: -0.25
+  _teamMember: {fileID: 540}
+  _teamPlayCoordinator: {fileID: 2212}
 --- !u!114 &529
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1855,6 +1865,8 @@ MonoBehaviour:
   _minimumContactHeight: 0.65
   _maximumContactHeight: 2.5
   _minimumForwardDot: -0.2
+  _teamMember: {fileID: 540}
+  _teamPlayCoordinator: {fileID: 2212}
 --- !u!1 &530
 GameObject:
   m_ObjectHideFlags: 0
@@ -1952,6 +1964,8 @@ MonoBehaviour:
   _minimumFlightTime: 0.55
   _maximumFlightTime: 1.1
   _landingHeight: 0.21
+  _teamMember: {fileID: 540}
+  _teamPlayCoordinator: {fileID: 2212}
 --- !u!114 &535
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3568,6 +3582,7 @@ MonoBehaviour:
   _courtPadding: 0.5
   _teamMember: {fileID: 2107}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
 --- !u!114 &2106
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3588,6 +3603,7 @@ MonoBehaviour:
   _movementBounds: {fileID: 2210}
   _teamMember: {fileID: 2107}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
   _receiveMinHeight: 0.3
   _receiveMaxHeight: 1.9
   _receiveDistance: 1.2
@@ -3753,6 +3769,7 @@ MonoBehaviour:
   _controller: {fileID: 2105}
   _teamMember: {fileID: 2107}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
   _receiveMinimumHeight: 0.25
   _receiveMaximumHeight: 2
   _receiveMinimumForwardDot: -0.35
@@ -4084,6 +4101,48 @@ MonoBehaviour:
   - {fileID: 2107}
   - {fileID: 3106}
   _responsibilitySwitchMargin: 0.5
+--- !u!114 &2212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d33d0ce42c41d0a8fd024c811a758b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 0
+  _teamMembers:
+  - {fileID: 540}
+  - {fileID: 3006}
+  _responsibilityResolver: {fileID: 2211}
+  _rallyEndDetector: {fileID: 202}
+  _ball: {fileID: 516}
+  _teamSetTarget: {fileID: 3241}
+  _attackReadyPosition: {fileID: 3251}
+--- !u!114 &2213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64d33d0ce42c41d0a8fd024c811a758b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _teamSide: 1
+  _teamMembers:
+  - {fileID: 2107}
+  - {fileID: 3106}
+  _responsibilityResolver: {fileID: 2211}
+  _rallyEndDetector: {fileID: 202}
+  _ball: {fileID: 516}
+  _teamSetTarget: {fileID: 3261}
+  _attackReadyPosition: {fileID: 3271}
 --- !u!1 &2220
 GameObject:
   m_ObjectHideFlags: 0
@@ -4306,6 +4365,7 @@ MonoBehaviour:
   _courtSide: 0
   _teamMember: {fileID: 3006}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2212}
   _moveSpeed: 5.5
   _acceleration: 22
   _deceleration: 20
@@ -4334,6 +4394,7 @@ MonoBehaviour:
   _movementBounds: {fileID: 2210}
   _teamMember: {fileID: 3006}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2212}
   _receiveMinHeight: 0.3
   _receiveMaxHeight: 1.9
   _receiveDistance: 1.2
@@ -4437,6 +4498,7 @@ MonoBehaviour:
   _controller: {fileID: 3004}
   _teamMember: {fileID: 3006}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2212}
   _receiveMinimumHeight: 0.25
   _receiveMaximumHeight: 2
   _receiveMinimumForwardDot: -0.35
@@ -4570,6 +4632,7 @@ MonoBehaviour:
   _courtSide: 1
   _teamMember: {fileID: 3106}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
   _moveSpeed: 5.5
   _acceleration: 22
   _deceleration: 20
@@ -4598,6 +4661,7 @@ MonoBehaviour:
   _movementBounds: {fileID: 2210}
   _teamMember: {fileID: 3106}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
   _receiveMinHeight: 0.3
   _receiveMaxHeight: 1.9
   _receiveDistance: 1.2
@@ -4701,6 +4765,7 @@ MonoBehaviour:
   _controller: {fileID: 3104}
   _teamMember: {fileID: 3106}
   _responsibilityResolver: {fileID: 2211}
+  _teamPlayCoordinator: {fileID: 2213}
   _receiveMinimumHeight: 0.25
   _receiveMaximumHeight: 2
   _receiveMinimumForwardDot: -0.35
@@ -4838,6 +4903,130 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 5.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3240
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3241}
+  m_Layer: 0
+  m_Name: PlayerTeamSetTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3241
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3240}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.3, z: -2.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3250
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3251}
+  m_Layer: 0
+  m_Name: PlayerAttackReady
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3251
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3250}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.25, z: -1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3260
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3261}
+  m_Layer: 0
+  m_Name: OpponentTeamSetTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3261
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3260}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.3, z: 2.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 501}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3270
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3271}
+  m_Layer: 0
+  m_Name: OpponentAttackReady
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3270}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.25, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

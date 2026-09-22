@@ -12,6 +12,9 @@ public sealed class BallResponsibilityResolver : MonoBehaviour
     public TeamMember PlayerResponsible { get; private set; }
     public TeamMember OpponentResponsible { get; private set; }
 
+    private TeamMember _playerLock;
+    private TeamMember _opponentLock;
+
     private void OnEnable()
     {
         if (_rallyEndDetector != null)
@@ -32,30 +35,34 @@ public sealed class BallResponsibilityResolver : MonoBehaviour
 
     private void Update()
     {
-        if (_trajectoryPredictor == null ||
-            _movementBounds == null ||
-            !_trajectoryPredictor.HasPrediction ||
-            (_rallyEndDetector != null && _rallyEndDetector.IsRallyEnded))
+        if ((_rallyEndDetector != null && _rallyEndDetector.IsRallyEnded) ||
+            _trajectoryPredictor == null ||
+            _movementBounds == null)
         {
             ClearResponsibilities();
+            return;
+        }
+
+        if (!_trajectoryPredictor.HasPrediction)
+        {
+            PlayerResponsible = SetResponsible(_playerTeam, _playerLock);
+            OpponentResponsible = SetResponsible(_opponentTeam, _opponentLock);
             return;
         }
 
         Vector3 landing = _trajectoryPredictor.PredictedLandingPoint;
         if (_movementBounds.Contains(landing, CourtSide.Player))
         {
-            PlayerResponsible = ResolveTeam(
-                _playerTeam,
-                PlayerResponsible,
-                landing);
+            PlayerResponsible = _playerLock != null
+                ? SetResponsible(_playerTeam, _playerLock)
+                : ResolveTeam(_playerTeam, PlayerResponsible, landing);
             OpponentResponsible = SetResponsible(_opponentTeam, null);
         }
         else if (_movementBounds.Contains(landing, CourtSide.Opponent))
         {
-            OpponentResponsible = ResolveTeam(
-                _opponentTeam,
-                OpponentResponsible,
-                landing);
+            OpponentResponsible = _opponentLock != null
+                ? SetResponsible(_opponentTeam, _opponentLock)
+                : ResolveTeam(_opponentTeam, OpponentResponsible, landing);
             PlayerResponsible = SetResponsible(_playerTeam, null);
         }
         else
@@ -74,6 +81,32 @@ public sealed class BallResponsibilityResolver : MonoBehaviour
         return side == CourtSide.Player
             ? PlayerResponsible
             : OpponentResponsible;
+    }
+
+    public void SetResponsibilityLock(CourtSide side, TeamMember member)
+    {
+        if (side == CourtSide.Player)
+        {
+            _playerLock = member;
+            PlayerResponsible = SetResponsible(_playerTeam, member);
+        }
+        else
+        {
+            _opponentLock = member;
+            OpponentResponsible = SetResponsible(_opponentTeam, member);
+        }
+    }
+
+    public void ReleaseResponsibilityLock(CourtSide side)
+    {
+        if (side == CourtSide.Player)
+        {
+            _playerLock = null;
+        }
+        else
+        {
+            _opponentLock = null;
+        }
     }
 
     private TeamMember ResolveTeam(
@@ -167,6 +200,8 @@ public sealed class BallResponsibilityResolver : MonoBehaviour
 
     private void ClearResponsibilities()
     {
+        _playerLock = null;
+        _opponentLock = null;
         PlayerResponsible = SetResponsible(_playerTeam, null);
         OpponentResponsible = SetResponsible(_opponentTeam, null);
     }

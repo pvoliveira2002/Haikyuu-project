@@ -13,6 +13,8 @@ public sealed class ReceiveSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _minimumContactHeight = 0.3f;
     [SerializeField, Min(0f)] private float _maximumContactHeight = 1.7f;
     [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = -0.25f;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
 
     public string CurrentMode => Input.GetKey(KeyCode.LeftAlt)
         ? "DIRECT RETURN READY"
@@ -64,10 +66,14 @@ public sealed class ReceiveSystem : MonoBehaviour
             return;
         }
 
-        bool directReturn = Input.GetKey(KeyCode.LeftAlt);
-        Vector3 target = directReturn
-            ? _targetResolver.ResolveDirectReturnTarget()
-            : _targetResolver.ResolveControlledTarget();
+        bool coordinatedReceive = _teamPlayCoordinator != null &&
+            _teamPlayCoordinator.CanRegisterReceive(_teamMember);
+        bool directReturn = !coordinatedReceive && Input.GetKey(KeyCode.LeftAlt);
+        Vector3 target = coordinatedReceive
+            ? _teamPlayCoordinator.GetReceiveTarget(_teamMember)
+            : directReturn
+                ? _targetResolver.ResolveDirectReturnTarget()
+                : _targetResolver.ResolveControlledTarget();
         Vector3 launchVelocity;
         if (directReturn)
         {
@@ -89,11 +95,16 @@ public sealed class ReceiveSystem : MonoBehaviour
             launchVelocity.normalized,
             launchVelocity.magnitude * ball.Mass);
         ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
+        _teamPlayCoordinator?.NotifyContact(
+            _teamMember,
+            coordinatedReceive
+                ? TeamPlayAction.Receive
+                : TeamPlayAction.SafeReturn);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Receive,
             ball.transform.position);
         Debug.Log(
-            $"RECEIVE | Mode={(directReturn ? "DirectReturn" : "Controlled")} | " +
+            $"RECEIVE | Mode={(coordinatedReceive ? "TeamPass" : directReturn ? "DirectReturn" : "Controlled")} | " +
             $"Target={target}");
     }
 

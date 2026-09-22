@@ -11,6 +11,7 @@ public sealed class AIOpponentController : MonoBehaviour
     [SerializeField] private CourtSide _courtSide = CourtSide.Opponent;
     [SerializeField] private TeamMember _teamMember;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
     [SerializeField, Min(0f)] private float _moveSpeed = 5.5f;
     [SerializeField, Min(0f)] private float _acceleration = 22f;
     [SerializeField, Min(0f)] private float _deceleration = 20f;
@@ -54,6 +55,12 @@ public sealed class AIOpponentController : MonoBehaviour
             : _homePosition;
         Vector3 target = home.position;
 
+        if (_teamPlayCoordinator != null &&
+            _teamPlayCoordinator.TryGetPreparationTarget(_teamMember, out Vector3 teamTarget))
+        {
+            target = teamTarget;
+        }
+
         if (IsResponsibleForBall() &&
             ShouldUsePredictedPosition() &&
             (_rallyEndDetector == null || !_rallyEndDetector.IsRallyEnded) &&
@@ -95,6 +102,7 @@ public sealed class AIOpponentController : MonoBehaviour
         return _trajectoryPredictor.IsFastIncomingBall ||
                _decision.CurrentAction == AIAction.PrepareReceive ||
                _decision.CurrentAction == AIAction.Receive ||
+               _decision.CurrentAction == AIAction.Set ||
                _decision.CurrentAction == AIAction.PrepareAttack ||
                _decision.CurrentAction == AIAction.Attack;
     }

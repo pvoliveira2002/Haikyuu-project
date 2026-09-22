@@ -20,6 +20,8 @@ public sealed class SpikeSystem : MonoBehaviour
     [SerializeField, Min(0.1f)] private float _minimumFlightTime = 0.55f;
     [SerializeField, Min(0.1f)] private float _maximumFlightTime = 1.1f;
     [SerializeField, Min(0f)] private float _landingHeight = 0.21f;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
 
     private float _bufferEndTime = float.NegativeInfinity;
     private float _spikeWindowEndTime = float.NegativeInfinity;
@@ -154,6 +156,7 @@ public sealed class SpikeSystem : MonoBehaviour
         float impulse = Mathf.Min(spikeVelocity.magnitude * ball.Mass, _spikeForce);
         ball.ApplyImpulse(spikeVelocity, impulse);
         ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
+        _teamPlayCoordinator?.NotifyContact(_teamMember, TeamPlayAction.Attack);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Spike,
             ball.transform.position);

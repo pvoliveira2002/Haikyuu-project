@@ -8,7 +8,8 @@ public enum AIAction
     PrepareReceive,
     Receive,
     PrepareAttack,
-    Attack
+    Attack,
+    Set
 }
 
 public sealed class AIOpponentDecision : MonoBehaviour
@@ -21,6 +22,7 @@ public sealed class AIOpponentDecision : MonoBehaviour
     [SerializeField] private CourtMovementBounds _movementBounds;
     [SerializeField] private TeamMember _teamMember;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
     [SerializeField, Min(0f)] private float _receiveMinHeight = 0.3f;
     [SerializeField, Min(0f)] private float _receiveMaxHeight = 1.9f;
     [SerializeField, Min(0f)] private float _receiveDistance = 1.2f;
@@ -104,11 +106,7 @@ public sealed class AIOpponentDecision : MonoBehaviour
             return AIAction.ReturnHome;
         }
 
-        if (_ball == null ||
-            _trajectoryPredictor == null ||
-            _allowedCourtArea == null ||
-            !_trajectoryPredictor.HasPrediction ||
-            !IsInsideAllowedArea(_trajectoryPredictor.PredictedLandingPoint))
+        if (_ball == null || _allowedCourtArea == null)
         {
             return AIAction.ReturnHome;
         }
@@ -119,6 +117,32 @@ public sealed class AIOpponentDecision : MonoBehaviour
         float horizontalDistance = horizontalOffset.magnitude;
         bool ballOnAISide = IsInsideAllowedArea(ballPosition);
         float verticalSpeed = _ball.Velocity.y;
+        TeamPlayAction plannedAction = _teamPlayCoordinator != null
+            ? _teamPlayCoordinator.GetPlannedAction(_teamMember)
+            : TeamPlayAction.None;
+
+        if (plannedAction == TeamPlayAction.Set)
+        {
+            bool canSetNow = ballOnAISide &&
+                IsWithinHeight(ballPosition.y, _receiveMinHeight, _attackMaxHeight) &&
+                horizontalDistance <= _receiveDistance;
+            return canSetNow ? AIAction.Set : AIAction.PrepareReceive;
+        }
+
+        if (_trajectoryPredictor == null ||
+            !_trajectoryPredictor.HasPrediction ||
+            !IsInsideAllowedArea(_trajectoryPredictor.PredictedLandingPoint))
+        {
+            return AIAction.ReturnHome;
+        }
+
+        if (plannedAction == TeamPlayAction.Attack)
+        {
+            bool canAttackNow = ballOnAISide &&
+                IsWithinHeight(ballPosition.y, _attackMinHeight, _attackMaxHeight) &&
+                horizontalDistance <= _attackDistance * 1.5f;
+            return canAttackNow ? AIAction.Attack : AIAction.PrepareAttack;
+        }
 
         if (_trajectoryPredictor.IsFastIncomingBall)
         {

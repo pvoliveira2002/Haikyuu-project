@@ -23,6 +23,8 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private CourtMovementBounds _movementBounds;
     [SerializeField] private PlayerAnimatedVisual _playerAnimatedVisual;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
+    [SerializeField] private TeamPlayCoordinator _playerTeamCoordinator;
+    [SerializeField] private TeamPlayCoordinator _opponentTeamCoordinator;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -104,9 +106,11 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Grounded {_playerAnimatedVisual.AnimationGrounded}  " +
             $"VerticalVelocity {_playerAnimatedVisual.AnimationVerticalVelocity:F2}\n" +
             $"PLAYER TEAM | {DescribeResponsible(CourtSide.Player)}\n" +
-            $"OPPONENT TEAM | {DescribeResponsible(CourtSide.Opponent)}";
+            $"{DescribeTeamPlay(_playerTeamCoordinator)}\n" +
+            $"OPPONENT TEAM | {DescribeResponsible(CourtSide.Opponent)}\n" +
+            $"{DescribeTeamPlay(_opponentTeamCoordinator)}";
 
-        GUI.Box(new Rect(12f, 12f, 950f, 430f), text);
+        GUI.Box(new Rect(12f, 12f, 950f, 470f), text);
     }
 
     private bool HasRequiredReferences()
@@ -130,7 +134,9 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _spikeSystem != null &&
                _movementBounds != null &&
                _playerAnimatedVisual != null &&
-               _responsibilityResolver != null;
+               _responsibilityResolver != null &&
+               _playerTeamCoordinator != null &&
+               _opponentTeamCoordinator != null;
     }
 
     private string DescribeResponsible(CourtSide side)
@@ -146,5 +152,29 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             : "None";
         return $"Responsible {member.DisplayName}  Home {home}  " +
                $"{(member.IsHuman ? "Human" : "AI")}";
+    }
+
+    private static string DescribeTeamPlay(TeamPlayCoordinator coordinator)
+    {
+        string receiver = coordinator.Receiver != null
+            ? coordinator.Receiver.DisplayName
+            : "None";
+        string setter = coordinator.Setter != null
+            ? coordinator.Setter.DisplayName
+            : "None";
+        string attacker = coordinator.Attacker != null
+            ? coordinator.Attacker.DisplayName
+            : "None";
+        string nextResponsible = coordinator.NextResponsible != null
+            ? coordinator.NextResponsible.DisplayName
+            : "None";
+        string lastTouchBy = coordinator.LastTouchBy != null
+            ? coordinator.LastTouchBy.DisplayName
+            : "None";
+        return $"State {coordinator.State}  Receiver {receiver}  " +
+               $"Setter {setter}  Attacker {attacker}  " +
+               $"Touches {coordinator.TeamTouchCount}\n" +
+               $"NextResponsible {nextResponsible}  LastPlayer {lastTouchBy}  " +
+               $"LastAction {coordinator.LastAction}  Next {coordinator.NextAction}";
     }
 }

@@ -14,6 +14,7 @@ public sealed class AIOpponentActions : MonoBehaviour
     [SerializeField] private AIOpponentController _controller;
     [SerializeField] private TeamMember _teamMember;
     [SerializeField] private BallResponsibilityResolver _responsibilityResolver;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
     [SerializeField, Min(0f)] private float _receiveMinimumHeight = 0.25f;
     [SerializeField, Min(0f)] private float _receiveMaximumHeight = 2f;
     [SerializeField, Range(-1f, 1f)] private float _receiveMinimumForwardDot = -0.35f;
@@ -142,9 +143,12 @@ public sealed class AIOpponentActions : MonoBehaviour
             return;
         }
 
+        bool teamFallback = _teamPlayCoordinator != null &&
+            _teamPlayCoordinator.IsFallbackAllowed(_teamMember);
         if (_teamMember != null &&
             _responsibilityResolver != null &&
-            !_responsibilityResolver.IsResponsible(_teamMember))
+            !_responsibilityResolver.IsResponsible(_teamMember) &&
+            !teamFallback)
         {
             return;
         }
@@ -154,6 +158,20 @@ public sealed class AIOpponentActions : MonoBehaviour
             IsEmergencyFallbackActive || sweptContact;
         bool closeContact = CurrentBallDistance <= _emergencyCloseDistance;
         bool angleAccepted = IsAngleValid || closeContact;
+        TeamPlayAction plannedAction = _teamPlayCoordinator != null
+            ? _teamPlayCoordinator.GetPlannedAction(_teamMember)
+            : TeamPlayAction.None;
+        if (plannedAction == TeamPlayAction.Set &&
+            physicallyReachable &&
+            IsHeightValid &&
+            angleAccepted &&
+            IsCooldownReady &&
+            !_contactConsumed)
+        {
+            ExecuteSet();
+            return;
+        }
+
         string rejectionReason = GetRejectionReason(
             defensiveBall,
             physicallyReachable,
@@ -164,7 +182,15 @@ public sealed class AIOpponentActions : MonoBehaviour
             return;
         }
 
-        if (defensiveBall)
+        if (_decision.CurrentAction == AIAction.Set)
+        {
+            ExecuteSet();
+        }
+        else if (_decision.CurrentAction == AIAction.Attack)
+        {
+            ExecuteAttack();
+        }
+        else if (defensiveBall)
         {
             if (ExecuteReceive())
             {
@@ -175,10 +201,6 @@ public sealed class AIOpponentActions : MonoBehaviour
                     $"Decision={_decision.CurrentAction}",
                     this);
             }
-        }
-        else if (_decision.CurrentAction == AIAction.Attack)
-        {
-            ExecuteAttack();
         }
         else if (_decision.CurrentAction == AIAction.Receive ||
                  IsDefensiveFallbackValid())
@@ -291,14 +313,40 @@ public sealed class AIOpponentActions : MonoBehaviour
 
     private bool ExecuteReceive()
     {
-        SelectContactTarget();
+        TeamPlayAction plannedAction = _teamPlayCoordinator != null
+            ? _teamPlayCoordinator.GetPlannedAction(_teamMember)
+            : TeamPlayAction.None;
+        if (plannedAction == TeamPlayAction.Receive)
+        {
+            _currentContactTarget = _teamPlayCoordinator.GetReceiveTarget(_teamMember);
+        }
+        else
+        {
+            SelectContactTarget();
+        }
+
         if (!TryBuildPlayableReceive(
                 _currentContactTarget,
                 out Vector3 direction,
                 out float force,
                 out float flightTime))
         {
-            return false;
+            if (plannedAction != TeamPlayAction.Receive)
+            {
+                return false;
+            }
+
+            SelectContactTarget();
+            if (!TryBuildPlayableReceive(
+                    _currentContactTarget,
+                    out direction,
+                    out force,
+                    out flightTime))
+            {
+                return false;
+            }
+
+            plannedAction = TeamPlayAction.SafeReturn;
         }
 
         ApplyBallAction(
@@ -306,8 +354,39 @@ public sealed class AIOpponentActions : MonoBehaviour
             force,
             "AI Receive",
             _currentContactTarget,
-            flightTime);
+            flightTime,
+            plannedAction == TeamPlayAction.Receive
+                ? TeamPlayAction.Receive
+                : TeamPlayAction.SafeReturn);
         return true;
+    }
+
+    private void ExecuteSet()
+    {
+        if (_teamPlayCoordinator == null || _teamMember == null)
+        {
+            ExecuteReceive();
+            return;
+        }
+
+        _currentContactTarget = _teamPlayCoordinator.GetSetTarget(_teamMember);
+        Vector3 launchVelocity = CalculateLaunchVelocity(
+            _ball.transform.position,
+            _currentContactTarget,
+            1.1f);
+        if (launchVelocity.sqrMagnitude <= 0.0001f)
+        {
+            ExecuteReceive();
+            return;
+        }
+
+        ApplyBallAction(
+            launchVelocity.normalized,
+            launchVelocity.magnitude * _ball.Mass,
+            "AI Set",
+            _currentContactTarget,
+            1.1f,
+            TeamPlayAction.Set);
     }
 
     private void ExecuteAttack()
@@ -330,7 +409,8 @@ public sealed class AIOpponentActions : MonoBehaviour
             adjustedForce,
             "AI Attack",
             _currentContactTarget,
-            -1f);
+            -1f,
+            TeamPlayAction.Attack);
     }
 
     private Vector3 GetHorizontalDirectionToTarget()
@@ -522,7 +602,8 @@ public sealed class AIOpponentActions : MonoBehaviour
         float force,
         string actionName,
         Vector3 intendedLanding,
-        float intendedFlightTime)
+        float intendedFlightTime,
+        TeamPlayAction teamAction)
     {
         _ball.ResetVelocity();
         _ball.ApplyImpulse(direction, force);
@@ -535,6 +616,7 @@ public sealed class AIOpponentActions : MonoBehaviour
             _teamMember != null
                 ? _teamMember.TeamSide
                 : CourtSide.Opponent);
+        _teamPlayCoordinator?.NotifyContact(_teamMember, teamAction);
         _nextContactTime = Time.time + _contactCooldown;
         _contactConsumed = true;
         _rejectionLoggedForApproach = false;

@@ -18,6 +18,8 @@ public sealed class SetSystem : MonoBehaviour
     [SerializeField, Min(0f)] private float _minimumContactHeight = 0.65f;
     [SerializeField, Min(0f)] private float _maximumContactHeight = 2.5f;
     [SerializeField, Range(-1f, 1f)] private float _minimumForwardDot = -0.2f;
+    [SerializeField] private TeamMember _teamMember;
+    [SerializeField] private TeamPlayCoordinator _teamPlayCoordinator;
 
     private float _bufferEndTime = float.NegativeInfinity;
     private bool _hasPendingInput;
@@ -110,6 +112,7 @@ public sealed class SetSystem : MonoBehaviour
         ball.ResetVelocity();
         ball.ApplyImpulse(setVelocity, setVelocity.magnitude * ball.Mass);
         ball.GetComponent<BallTouchTracker>()?.RegisterTouch(CourtSide.Player);
+        _teamPlayCoordinator?.NotifyContact(_teamMember, TeamPlayAction.Set);
         ActionFeedbackController.PlayFeedback(
             ActionFeedbackType.Set,
             ball.transform.position);
@@ -121,6 +124,15 @@ public sealed class SetSystem : MonoBehaviour
 
     private Vector3 CalculateSetVelocity(VolleyballBall ball)
     {
+        if (_teamPlayCoordinator != null &&
+            _teamPlayCoordinator.GetPlannedAction(_teamMember) == TeamPlayAction.Set)
+        {
+            Vector3 coordinatedTarget = _teamPlayCoordinator.GetSetTarget(_teamMember);
+            return CalculateVelocityThroughApex(
+                ball.transform.position,
+                coordinatedTarget);
+        }
+
         if (_spikePreparationTarget == null)
         {
             Vector3 fallbackDirection =
@@ -141,18 +153,23 @@ public sealed class SetSystem : MonoBehaviour
         LastDistanceToNet = Mathf.Abs(target.z - netZ);
         _spikePreparationTarget.position = target;
 
+        return CalculateVelocityThroughApex(ball.transform.position, target);
+    }
+
+    private Vector3 CalculateVelocityThroughApex(Vector3 origin, Vector3 target)
+    {
         float gravity = -Physics.gravity.y;
         float apexHeight = Mathf.Max(
             _setApexHeight,
-            ball.transform.position.y + 0.4f,
+            origin.y + 0.4f,
             target.y + 0.4f);
         float upwardSpeed = Mathf.Sqrt(
-            2f * gravity * Mathf.Max(0f, apexHeight - ball.transform.position.y));
+            2f * gravity * Mathf.Max(0f, apexHeight - origin.y));
         float riseTime = upwardSpeed / gravity;
         float fallTime = Mathf.Sqrt(
             2f * Mathf.Max(0f, apexHeight - target.y) / gravity);
         float flightTime = Mathf.Max(0.35f, riseTime + fallTime);
-        Vector3 velocity = (target - ball.transform.position) / flightTime;
+        Vector3 velocity = (target - origin) / flightTime;
         velocity.y = upwardSpeed;
         return velocity;
     }
