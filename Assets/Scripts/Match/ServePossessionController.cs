@@ -1,4 +1,5 @@
 using System.Collections;
+using System;
 using UnityEngine;
 
 public sealed class ServePossessionController : MonoBehaviour
@@ -18,9 +19,12 @@ public sealed class ServePossessionController : MonoBehaviour
     [SerializeField, Min(0f)] private float _opponentServeVerticalBias = 0.7f;
 
     private Coroutine _opponentServeRoutine;
+    private bool _hasInitialServer;
 
     public CourtSide CurrentServer { get; private set; } = CourtSide.Player;
-    public bool CanPlayerServe { get; private set; } = true;
+    public bool CanPlayerServe { get; private set; }
+    public bool HasInitialServer => _hasInitialServer;
+    public event Action<CourtSide> ServeStarted;
     public Vector3 NextServePosition => CurrentServer == CourtSide.Player
         ? _playerServePoint.position
         : _opponentServePoint.position;
@@ -50,7 +54,8 @@ public sealed class ServePossessionController : MonoBehaviour
     {
         CanPlayerServe = false;
 
-        if (_matchSetManager != null && _matchSetManager.MatchOver)
+        if (!_hasInitialServer ||
+            (_matchSetManager != null && _matchSetManager.MatchOver))
         {
             return;
         }
@@ -69,6 +74,21 @@ public sealed class ServePossessionController : MonoBehaviour
     {
         CanPlayerServe = false;
         _touchTracker?.RegisterServe(CourtSide.Player, _playerServer);
+        ServeStarted?.Invoke(CourtSide.Player);
+    }
+
+    public void InitializeFirstServer(CourtSide firstServer)
+    {
+        if (_hasInitialServer)
+        {
+            return;
+        }
+
+        _hasInitialServer = true;
+        CurrentServer = firstServer;
+        _ball.ResetPosition(NextServePosition);
+        PrepareNextServe();
+        Debug.Log($"First Server: {CurrentServer}", this);
     }
 
     private void HandleRallyEnded(CourtSide winner)
@@ -108,6 +128,7 @@ public sealed class ServePossessionController : MonoBehaviour
             ActionFeedbackType.AIServe,
             _ball.transform.position);
         _touchTracker?.RegisterServe(CourtSide.Opponent, _opponentServer);
+        ServeStarted?.Invoke(CourtSide.Opponent);
         _opponentServeRoutine = null;
     }
 }

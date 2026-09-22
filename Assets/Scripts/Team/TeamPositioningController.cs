@@ -110,10 +110,12 @@ public sealed class TeamPositioningController : MonoBehaviour
             return Clamp(_teamSetTarget.position);
         }
 
-        if (state == TeamPlayState.Preparing && _attackReadyPosition != null &&
+        if (state == TeamPlayState.Preparing &&
             member == _teamPlayCoordinator.Receiver)
         {
-            return Clamp(_attackReadyPosition.position);
+            return Clamp(
+                _teamPlayCoordinator.GetSetTarget(
+                    _teamPlayCoordinator.Setter));
         }
 
         if (state == TeamPlayState.Attacking &&

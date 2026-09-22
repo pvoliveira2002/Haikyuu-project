@@ -178,6 +178,7 @@ GameObject:
   - component: {fileID: 2213}
   - component: {fileID: 2214}
   - component: {fileID: 2215}
+  - component: {fileID: 2216}
   m_Layer: 0
   m_Name: Court
   m_TagString: Untagged
@@ -355,6 +356,7 @@ MonoBehaviour:
   _opponentTeamCoordinator: {fileID: 2213}
   _playerTeamPositioning: {fileID: 2214}
   _opponentTeamPositioning: {fileID: 2215}
+  _matchCoinToss: {fileID: 2216}
   _aiReactionTime: 0.18
   _visible: 0
 --- !u!1 &210
@@ -4186,6 +4188,12 @@ MonoBehaviour:
   _ball: {fileID: 516}
   _teamSetTarget: {fileID: 3241}
   _attackReadyPosition: {fileID: 3251}
+  _setZoneLateralOffset: 2.5
+  _centerZoneHalfWidth: 0.75
+  _courtHalfWidth: 4.5
+  _courtHalfLength: 9
+  _courtEdgeMargin: 0.6
+  _netSafetyBuffer: 0.75
 --- !u!114 &2213
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4207,6 +4215,12 @@ MonoBehaviour:
   _ball: {fileID: 516}
   _teamSetTarget: {fileID: 3261}
   _attackReadyPosition: {fileID: 3271}
+  _setZoneLateralOffset: 2.5
+  _centerZoneHalfWidth: 0.75
+  _courtHalfWidth: 4.5
+  _courtHalfLength: 9
+  _courtEdgeMargin: 0.6
+  _netSafetyBuffer: 0.75
 --- !u!114 &2214
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4263,6 +4277,21 @@ MonoBehaviour:
   _defensiveDepthOffset: 0.8
   _attackDefenseDepth: 0.75
   _coverageDepth: 1.4
+--- !u!114 &2216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7b3d2d391c24a8c85ddc2c51092f109, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _matchSetManager: {fileID: 204}
+  _servePossession: {fileID: 205}
+  _rallyEndDetector: {fileID: 202}
 --- !u!1 &2220
 GameObject:
   m_ObjectHideFlags: 0

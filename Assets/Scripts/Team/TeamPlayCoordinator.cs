@@ -18,6 +18,13 @@ public enum TeamPlayAction
     SafeReturn
 }
 
+public enum TeamSetZone
+{
+    Left,
+    Center,
+    Right
+}
+
 public sealed class TeamPlayCoordinator : MonoBehaviour
 {
     [SerializeField] private CourtSide _teamSide;
@@ -27,6 +34,12 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
     [SerializeField] private VolleyballBall _ball;
     [SerializeField] private Transform _teamSetTarget;
     [SerializeField] private Transform _attackReadyPosition;
+    [SerializeField, Min(0f)] private float _setZoneLateralOffset = 2.5f;
+    [SerializeField, Min(0f)] private float _centerZoneHalfWidth = 0.75f;
+    [SerializeField, Min(0f)] private float _courtHalfWidth = 4.5f;
+    [SerializeField, Min(0f)] private float _courtHalfLength = 9f;
+    [SerializeField, Min(0f)] private float _courtEdgeMargin = 0.6f;
+    [SerializeField, Min(0f)] private float _netSafetyBuffer = 0.75f;
 
     public TeamPlayState State { get; private set; } = TeamPlayState.Defending;
     public TeamMember Receiver { get; private set; }
@@ -39,6 +52,10 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
     public TeamMember NextResponsible { get; private set; }
     public TeamMember LastTouchBy { get; private set; }
     public TeamPlayAction LastAction { get; private set; }
+    public TeamSetZone SelectedSetZone { get; private set; } = TeamSetZone.Center;
+    public Vector3 SelectedSetTarget { get; private set; }
+    public Vector3 SetTargetAttackerPosition { get; private set; }
+    public string SetTargetReason { get; private set; } = "SafeTarget";
 
     private void OnEnable()
     {
@@ -144,14 +161,43 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
 
     public Vector3 GetSetTarget(TeamMember member)
     {
-        if (_attackReadyPosition != null)
+        TeamMember attacker = Attacker;
+        bool hasAttacker = attacker != null && attacker != member;
+        Vector3 referencePosition;
+        if (hasAttacker)
         {
-            return _attackReadyPosition.position;
+            referencePosition = attacker.transform.position;
+            SetTargetReason = "AttackerPosition";
+        }
+        else if (_ball != null)
+        {
+            referencePosition = _ball.transform.position;
+            SetTargetReason = "FallbackBallSide";
+        }
+        else if (SupportPlayer != null)
+        {
+            referencePosition = SupportPlayer.transform.position;
+            SetTargetReason = "FallbackSupportPlayer";
+        }
+        else
+        {
+            referencePosition = member != null
+                ? member.transform.position
+                : Vector3.zero;
+            SetTargetReason = "SafeTarget";
         }
 
-        return Receiver != null
-            ? Receiver.transform.position + Vector3.up * 1.8f
-            : member.transform.position + Vector3.up * 1.8f;
+        SetTargetAttackerPosition = hasAttacker
+            ? attacker.transform.position
+            : Vector3.zero;
+        SelectedSetZone = SelectSetZone(referencePosition.x);
+
+        Vector3 target = _attackReadyPosition != null
+            ? _attackReadyPosition.position
+            : referencePosition + Vector3.up * 1.8f;
+        target.x = GetZoneCenter(SelectedSetZone);
+        SelectedSetTarget = ClampSetTarget(target);
+        return SelectedSetTarget;
     }
 
     public bool TryGetPreparationTarget(TeamMember member, out Vector3 target)
@@ -170,9 +216,9 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
         }
 
         if ((State == TeamPlayState.Preparing || State == TeamPlayState.Attacking) &&
-            member == Receiver && _attackReadyPosition != null)
+            member == Receiver)
         {
-            target = _attackReadyPosition.position;
+            target = GetSetTarget(Setter);
             return true;
         }
 
@@ -285,6 +331,42 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
         return null;
     }
 
+    private TeamSetZone SelectSetZone(float worldX)
+    {
+        if (worldX < -_centerZoneHalfWidth)
+        {
+            return TeamSetZone.Left;
+        }
+
+        return worldX > _centerZoneHalfWidth
+            ? TeamSetZone.Right
+            : TeamSetZone.Center;
+    }
+
+    private float GetZoneCenter(TeamSetZone zone)
+    {
+        switch (zone)
+        {
+            case TeamSetZone.Left:
+                return -_setZoneLateralOffset;
+            case TeamSetZone.Right:
+                return _setZoneLateralOffset;
+            default:
+                return 0f;
+        }
+    }
+
+    private Vector3 ClampSetTarget(Vector3 target)
+    {
+        float sideLimit = Mathf.Max(0f, _courtHalfWidth - _courtEdgeMargin);
+        float endLimit = Mathf.Max(_netSafetyBuffer, _courtHalfLength - _courtEdgeMargin);
+        target.x = Mathf.Clamp(target.x, -sideLimit, sideLimit);
+        target.z = _teamSide == CourtSide.Player
+            ? Mathf.Clamp(target.z, -endLimit, -_netSafetyBuffer)
+            : Mathf.Clamp(target.z, _netSafetyBuffer, endLimit);
+        return target;
+    }
+
     private bool IsBallOnOpponentSide()
     {
         const float CenterMargin = 0.15f;
@@ -319,6 +401,16 @@ public sealed class TeamPlayCoordinator : MonoBehaviour
         NextResponsible = null;
         LastTouchBy = null;
         LastAction = TeamPlayAction.None;
+        SelectedSetZone = TeamSetZone.Center;
+        SelectedSetTarget = _attackReadyPosition != null
+            ? ClampSetTarget(
+                new Vector3(
+                    0f,
+                    _attackReadyPosition.position.y,
+                    _attackReadyPosition.position.z))
+            : Vector3.zero;
+        SetTargetAttackerPosition = Vector3.zero;
+        SetTargetReason = "SafeTarget";
         _responsibilityResolver?.ReleaseResponsibilityLock(_teamSide);
     }
 

@@ -27,6 +27,7 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
     [SerializeField] private TeamPlayCoordinator _opponentTeamCoordinator;
     [SerializeField] private TeamPositioningController _playerTeamPositioning;
     [SerializeField] private TeamPositioningController _opponentTeamPositioning;
+    [SerializeField] private MatchCoinTossController _matchCoinToss;
     [SerializeField] private float _aiReactionTime = 0.18f;
     [SerializeField] private bool _visible;
 
@@ -62,6 +63,8 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"Match | Score {_scoreManager.PlayerScore}-{_scoreManager.OpponentScore}  " +
             $"Sets {_matchSetManager.PlayerSets}-{_matchSetManager.OpponentSets}  " +
             $"Server {_servePossession.CurrentServer}  Rally {!_rallyEndDetector.IsRallyEnded}\n" +
+            $"MATCH | State {_matchCoinToss.State}  Serving Team {_servePossession.CurrentServer}  " +
+            $"Coin Toss {(_matchCoinToss.HasCoinTossResult ? _matchCoinToss.CoinTossWinner.ToString() : "Pending")}\n" +
             $"Player | Grounded {_playerJump.IsGrounded}  Speed {playerVelocity.magnitude:F1}  " +
             $"Last {_playtestMonitor.LastAction}\n" +
             $"Ball | Speed {_ball.Velocity.magnitude:F1}  Height {_ball.transform.position.y:F1}  " +
@@ -129,7 +132,7 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
             $"{DescribeTeamPlay(_opponentTeamCoordinator)}\n" +
             $"{DescribePositioning(_opponentTeamPositioning)}";
 
-        GUI.Box(new Rect(12f, 12f, 950f, 625f), text);
+        GUI.Box(new Rect(12f, 12f, 950f, 650f), text);
     }
 
     private bool HasRequiredReferences()
@@ -157,7 +160,8 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                _playerTeamCoordinator != null &&
                _opponentTeamCoordinator != null &&
                _playerTeamPositioning != null &&
-               _opponentTeamPositioning != null;
+               _opponentTeamPositioning != null &&
+               _matchCoinToss != null;
     }
 
     private string DescribeResponsible(CourtSide side)
@@ -209,7 +213,12 @@ public sealed class PrototypeDebugHUD : MonoBehaviour
                $"Setter {setter}  Attacker {attacker}  " +
                $"Touches {coordinator.TeamTouchCount}\n" +
                $"NextResponsible {nextResponsible}  LastPlayer {lastTouchBy}  " +
-               $"LastAction {coordinator.LastAction}  Next {coordinator.NextAction}";
+               $"LastAction {coordinator.LastAction}  Next {coordinator.NextAction}\n" +
+               $"SET AI | Setter {setter}  Attacker {attacker}  " +
+               $"SelectedSetZone {coordinator.SelectedSetZone}  " +
+               $"SetTarget {coordinator.SelectedSetTarget:F1}  " +
+               $"AttackerPosition {coordinator.SetTargetAttackerPosition:F1}  " +
+               $"Reason {coordinator.SetTargetReason}";
     }
 
     private static string DescribePositioning(

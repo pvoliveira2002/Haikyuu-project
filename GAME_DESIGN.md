@@ -370,6 +370,28 @@ Decisão tática:
 
 ---
 
+# AI DIFFICULTY SYSTEM — FUTURO
+
+O sistema de dificuldade da IA será implementado somente após a estabilização
+das regras e do gameplay offline.
+
+Possíveis variáveis futuras:
+
+- reactionDelay;
+- predictionAccuracy;
+- positioningError;
+- receiveAccuracy;
+- setAccuracy;
+- spikeAccuracy;
+- spikeTargetQuality;
+- decisionAggressiveness;
+- recoverySpeed;
+- mistakeChance.
+
+Nenhum valor ou comportamento de dificuldade é aplicado nesta fase.
+
+---
+
 # CÂMERA
 
 Primeiro modelo:
